@@ -41,41 +41,30 @@
             font-size: 0.9rem;
         }
 
-        .input-group {
-            position: relative;
+        .media-type-switch {
+            display: flex;
+            gap: 1rem;
             margin-bottom: 1.5rem;
         }
 
-        .input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text);
-            font-weight: 500;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            padding-left: 2.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+        .media-type-btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
             border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.1);
             color: var(--text);
-            font-size: 1rem;
+            cursor: pointer;
             transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .input-group input:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 1rem;
-            top: 2.4rem;
-            color: var(--text-light);
+        .media-type-btn.active {
+            background: var(--primary);
+            color: white;
         }
 
         .media-preview {
@@ -90,126 +79,81 @@
             gap: 1rem;
             cursor: pointer;
             transition: var(--transition);
-            background-size: cover;
-            background-position: center;
-            color: var(--text-light);
-            margin-bottom: 1rem;
             position: relative;
             overflow: hidden;
         }
 
         .media-preview:hover {
             border-color: var(--primary);
-            background-color: rgba(99, 102, 241, 0.1);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .media-preview i {
             font-size: 3rem;
-            transition: var(--transition);
+            color: var(--text-light);
         }
 
-        .media-preview:hover i {
-            transform: scale(1.1);
-        }
-
-        .media-preview.has-image {
+        .media-preview.has-media {
             border-style: solid;
             border-color: var(--primary);
         }
 
-        .media-preview.has-image::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            opacity: 0;
+        .media-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
             transition: var(--transition);
         }
 
-        .media-preview.has-image:hover::before {
-            opacity: 1;
-        }
-
-        .media-preview.has-image .upload-icon {
-            position: absolute;
-            color: white;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: var(--transition);
-        }
-
-        .media-preview.has-image:hover .upload-icon {
-            opacity: 1;
-            transform: translateY(0);
+        .form-group input:focus {
+            border-color: var(--primary);
+            outline: none;
         }
 
         .help-text {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-light);
-            font-size: 0.875rem;
             margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-light);
         }
 
-        .help-text i {
-            color: var(--primary);
-        }
-
-        .checkbox-group {
-            margin: 2rem 0;
-        }
-
-        .checkbox-label {
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: var(--radius);
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            cursor: pointer;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .checkbox-label input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            border-radius: var(--radius-sm);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-            cursor: pointer;
-            position: relative;
-            transition: var(--transition);
-        }
-
-        .checkbox-label input[type="checkbox"]:checked {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-
-        .checkbox-label input[type="checkbox"]:checked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 14px;
-        }
-
-        .checkbox-text {
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .form-actions button,
-        .form-actions a {
-            flex: 1;
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
         }
 
         .notification {
@@ -233,28 +177,14 @@
         }
 
         @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
         @media (max-width: 640px) {
             .submit-container {
                 margin: 1rem;
                 padding: 1.5rem;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .media-preview {
-                height: 200px;
             }
         }
     </style>
@@ -283,18 +213,26 @@
             <form id="submitForm" class="submit-form" enctype="multipart/form-data">
                 <?php echo CSRF::getTokenField(); ?>
                 
-                <div class="input-group">
+                <div class="media-type-switch">
+                    <button type="button" class="media-type-btn active" data-type="photo">
+                        <i class="fas fa-image"></i> Фото
+                    </button>
+                    <button type="button" class="media-type-btn" data-type="video">
+                        <i class="fas fa-video"></i> Видео
+                    </button>
+                </div>
+
+                <div class="form-group">
                     <label for="name">Имя участницы</label>
-                    <i class="fas fa-user"></i>
                     <input type="text" id="name" name="name" required 
                            placeholder="Введите имя участницы"
                            minlength="2" maxlength="50">
                 </div>
 
-                <div class="input-group">
-                    <label for="photo">Фотография</label>
+                <div class="form-group" id="photoUpload">
+                    <label>Фотография</label>
                     <div class="media-preview" id="photoPreview">
-                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <i class="fas fa-cloud-upload-alt"></i>
                         <span>Нажмите или перетащите фото</span>
                     </div>
                     <input type="file" id="photo" name="photo" 
@@ -306,9 +244,23 @@
                     </p>
                 </div>
 
-                <div class="input-group">
+                <div class="form-group hidden" id="videoUpload">
+                    <label>Видео</label>
+                    <div class="media-preview" id="videoPreview">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Нажмите или перетащите видео</span>
+                    </div>
+                    <input type="file" id="video" name="video" 
+                           accept="video/*" required
+                           class="hidden">
+                    <p class="help-text">
+                        <i class="fas fa-info-circle"></i>
+                        Максимальная длительность: 15 секунд, до 10 МБ
+                    </p>
+                </div>
+
+                <div class="form-group">
                     <label for="social">Ссылка на соцсеть (необязательно)</label>
-                    <i class="fas fa-link"></i>
                     <input type="url" id="social" name="social"
                            placeholder="https://instagram.com/username">
                     <p class="help-text">
@@ -327,7 +279,7 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="action-button">
+                    <button type="submit" class="submit-btn">
                         <i class="fas fa-paper-plane"></i> Отправить
                     </button>
 
@@ -359,95 +311,103 @@
     </footer>
 
     <script>
-        // Функция для показа уведомлений
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                ${message}
-            `;
-            document.body.appendChild(notification);
+        // Переключение типа медиа
+        const mediaTypeBtns = document.querySelectorAll('.media-type-btn');
+        const photoUpload = document.getElementById('photoUpload');
+        const videoUpload = document.getElementById('videoUpload');
 
-            setTimeout(() => {
-                notification.style.animation = 'slideIn 0.3s ease-out reverse';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
+        mediaTypeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                mediaTypeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
 
-        // Предпросмотр фото
-        function previewImage(input) {
-            const preview = document.getElementById('photoPreview');
-            const file = input.files[0];
-            
+                if (btn.dataset.type === 'photo') {
+                    photoUpload.classList.remove('hidden');
+                    videoUpload.classList.add('hidden');
+                } else {
+                    photoUpload.classList.add('hidden');
+                    videoUpload.classList.remove('hidden');
+                }
+            });
+        });
+
+        // Загрузка фото
+        const photoPreview = document.getElementById('photoPreview');
+        const photoInput = document.getElementById('photo');
+
+        photoPreview.addEventListener('click', () => photoInput.click());
+
+        photoInput.addEventListener('change', function() {
+            const file = this.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    preview.style.backgroundImage = `url(${e.target.result})`;
-                    preview.innerHTML = '';
-                    preview.classList.add('has-image');
+                    photoPreview.style.backgroundImage = `url(${e.target.result})`;
+                    photoPreview.innerHTML = '';
+                    photoPreview.classList.add('has-media');
                 };
                 reader.readAsDataURL(file);
             }
-        }
-
-        // Drag and drop
-        const dropZone = document.getElementById('photoPreview');
-        const fileInput = document.getElementById('photo');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
         });
 
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        // Загрузка видео
+        const videoPreview = document.getElementById('videoPreview');
+        const videoInput = document.getElementById('video');
 
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
-        });
+        videoPreview.addEventListener('click', () => videoInput.click());
 
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            dropZone.classList.add('highlight');
-        }
-
-        function unhighlight(e) {
-            dropZone.classList.remove('highlight');
-        }
-
-        dropZone.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            fileInput.files = files;
-            previewImage(fileInput);
-        }
-
-        // Клик для выбора файла
-        dropZone.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', function() {
-            previewImage(this);
+        videoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const video = document.createElement('video');
+                video.src = URL.createObjectURL(file);
+                video.controls = true;
+                
+                video.onloadedmetadata = function() {
+                    if (video.duration > 15) {
+                        showNotification('Видео должно быть не длиннее 15 секунд', 'error');
+                        videoInput.value = '';
+                        return;
+                    }
+                    videoPreview.innerHTML = '';
+                    videoPreview.appendChild(video);
+                    videoPreview.classList.add('has-media');
+                };
+            }
         });
 
         // Отправка формы
         document.getElementById('submitForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = new FormData(e.target);
+            const formData = new FormData();
+            
+            // Добавляем основные данные
+            formData.append('name', document.getElementById('name').value);
+            formData.append('social', document.getElementById('social').value);
+            
+            // Определяем тип медиа
+            const activeType = document.querySelector('.media-type-btn.active').dataset.type;
+            formData.append('type', activeType);
+            
+            // Добавляем файл
+            if (activeType === 'photo') {
+                const photoFile = document.getElementById('photo').files[0];
+                if (photoFile) {
+                    formData.append('media', photoFile);
+                }
+            } else {
+                const videoFile = document.getElementById('video').files[0];
+                if (videoFile) {
+                    formData.append('media', videoFile);
+                }
+            }
             
             try {
                 const response = await fetch('/api/submit.php', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    credentials: 'include' // Важно для работы с сессиями
                 });
                 
                 const result = await response.json();
@@ -464,6 +424,22 @@
                 showNotification(error.message, 'error');
             }
         });
+
+        // Показ уведомлений
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
     </script>
 </body>
 </html> 

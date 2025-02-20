@@ -1,14 +1,20 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/csrf.php';
+require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../classes/ImageProcessor.php';
+
+// Включаем CORS
+cors();
 
 header('Content-Type: application/json');
 
 try {
     // Проверяем CSRF-токен
-    if (!isset($_POST['csrf_token']) || !CSRF::validateToken($_POST['csrf_token'])) {
-        throw new Exception('Недействительный CSRF-токен');
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!isset($_POST['csrf_token']) || !CSRF::validateToken($_POST['csrf_token'])) {
+            throw new Exception('Недействительный CSRF-токен');
+        }
     }
     
     // Проверяем авторизацию
@@ -17,58 +23,104 @@ try {
         throw new Exception('Требуется авторизация');
     }
     
-    if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+    // Проверяем наличие файла
+    if (!isset($_FILES['media']) || $_FILES['media']['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('Ошибка загрузки файла');
     }
-    
-    // Создаем экземпляр обработчика изображений
-    $imageProcessor = new ImageProcessor();
-    
-    // Валидируем изображение
-    $imageProcessor->validateImage($_FILES['photo']);
-    
+
+    $type = $_POST['type'] ?? 'photo';
+    $file = $_FILES['media'];
+    $name = $_POST['name'] ?? '';
+    $social = $_POST['social'] ?? '';
+
+    // Проверяем тип файла
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    // Создаем директории если не существуют
+    $uploadDir = __DIR__ . '/../public/uploads/';
+    $photoDir = $uploadDir . 'photos/';
+    $videoDir = $uploadDir . 'videos/';
+    $thumbDir = $uploadDir . 'thumbnails/';
+
+    foreach ([$photoDir, $videoDir, $thumbDir] as $dir) {
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+    }
+
     // Генерируем уникальное имя файла
-    $extension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-    $filename = uniqid() . '.' . $extension;
-    $uploadPath = __DIR__ . '/../uploads/photos/' . $filename;
-    $thumbPath = __DIR__ . '/../uploads/thumbnails/' . $filename;
-    
-    // Создаем директории, если не существуют
-    if (!file_exists(__DIR__ . '/../uploads/photos/')) {
-        mkdir(__DIR__ . '/../uploads/photos/', 0777, true);
+    $filename = uniqid() . '_' . time();
+
+    if ($type === 'photo') {
+        // Проверяем, что это изображение
+        if (!in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp'])) {
+            throw new Exception('Недопустимый формат изображения');
+        }
+
+        // Обрабатываем изображение
+        $imageProcessor = new ImageProcessor();
+        $extension = $imageProcessor->getExtensionFromMime($mimeType);
+        $finalFilename = $filename . '.' . $extension;
+        
+        $imageProcessor->processImage(
+            $file['tmp_name'],
+            $photoDir . $finalFilename
+        );
+        
+        $imageProcessor->generateThumbnail(
+            $file['tmp_name'],
+            $thumbDir . $finalFilename
+        );
+
+        $mediaPath = 'uploads/photos/' . $finalFilename;
+        $thumbPath = 'uploads/thumbnails/' . $finalFilename;
+    } else {
+        // Проверяем, что это видео
+        if (!in_array($mimeType, ['video/mp4', 'video/webm'])) {
+            throw new Exception('Недопустимый формат видео');
+        }
+
+        // Проверяем размер видео
+        if ($file['size'] > 10 * 1024 * 1024) { // 10MB
+            throw new Exception('Видео слишком большое');
+        }
+
+        // Сохраняем видео
+        $extension = $mimeType === 'video/mp4' ? 'mp4' : 'webm';
+        $finalFilename = $filename . '.' . $extension;
+        move_uploaded_file($file['tmp_name'], $videoDir . $finalFilename);
+
+        $mediaPath = 'uploads/videos/' . $finalFilename;
+        $thumbPath = null;
     }
-    if (!file_exists(__DIR__ . '/../uploads/thumbnails/')) {
-        mkdir(__DIR__ . '/../uploads/thumbnails/', 0777, true);
-    }
-    
-    // Обрабатываем и сохраняем изображение
-    $imageProcessor->processImage($_FILES['photo']['tmp_name'], $uploadPath);
-    
-    // Создаем миниатюру
-    $imageProcessor->generateThumbnail($_FILES['photo']['tmp_name'], $thumbPath);
-    
-    // Сохраняем информацию в базу данных
+
+    // Сохраняем в базу данных
     $stmt = $pdo->prepare("
-        INSERT INTO contestants (
-            name, photo, thumbnail, user_id, created_at
+        INSERT INTO submissions (
+            name, media_type, media_path, thumbnail_path,
+            social_link, user_id, status, created_at
         ) VALUES (
-            ?, ?, ?, ?, NOW()
+            ?, ?, ?, ?, ?, ?, 'pending', NOW()
         )
     ");
-    
+
     $stmt->execute([
-        $_POST['name'],
-        '/uploads/photos/' . $filename,
-        '/uploads/thumbnails/' . $filename,
+        $name,
+        $type,
+        $mediaPath,
+        $thumbPath,
+        $social,
         $_SESSION['user_id']
     ]);
-    
+
     echo json_encode([
         'success' => true,
-        'message' => 'Фотография успешно загружена',
-        'photo' => '/uploads/photos/' . $filename
+        'message' => 'Файл успешно загружен',
+        'media' => $mediaPath
     ]);
-    
+
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
