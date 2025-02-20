@@ -13,23 +13,22 @@ try {
         $host .= '.oregon-postgres.render.com';
     }
 
-    // Создаем DSN с явным указанием порта и SSL режима
-    $dsn = "pgsql:host={$host};dbname={$dbname};sslmode=require";
+    // Создаем DSN с расширенными параметрами SSL
+    $dsn = "pgsql:host={$host};dbname={$dbname};sslmode=verify-full;sslcert=/etc/ssl/certs/ca-certificates.crt";
     
     if (Env::get('APP_DEBUG', false)) {
         error_log("Connecting to database with DSN: " . str_replace($password, '***', $dsn));
     }
     
-    $pdo = new PDO(
-        $dsn,
-        $user,
-        $password,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false
-        ]
-    );
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_TIMEOUT => 30, // Увеличиваем таймаут
+        PDO::PGSQL_ATTR_SSL_MODE => PDO::PGSQL_SSL_VERIFY_FULL
+    ];
+    
+    $pdo = new PDO($dsn, $user, $password, $options);
     
     // Устанавливаем таймзону
     $pdo->exec("SET timezone = 'Europe/Moscow'");
@@ -37,6 +36,7 @@ try {
 } catch (PDOException $e) {
     if (Env::get('APP_DEBUG', false)) {
         error_log("Database connection error: " . $e->getMessage());
+        error_log("Connection details: host={$host}, dbname={$dbname}, user={$user}");
         throw $e;
     }
     die('Database connection failed: ' . $e->getMessage());
