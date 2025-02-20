@@ -1,0 +1,233 @@
+/* Стили для админ-панели */
+.admin-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.admin-section {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.admin-section h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-form {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #666;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+.photo-preview {
+    margin-top: 1rem;
+    width: 200px;
+    height: 200px;
+    border: 2px dashed #ddd;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    background-size: cover;
+    background-position: center;
+}
+
+.admin-button {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    background: #3498db;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-button:hover {
+    background: #2980b9;
+}
+
+.admin-button.danger {
+    background: #e74c3c;
+}
+
+.admin-button.danger:hover {
+    background: #c0392b;
+}
+
+.admin-button.success {
+    background: #2ecc71;
+}
+
+.admin-button.success:hover {
+    background: #27ae60;
+}
+
+/* Сетка участниц */
+.contestants-grid,
+.submissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.contestant-card,
+.submission-card {
+    background: #f8f9fa;
+    border-radius: 5px;
+    padding: 1rem;
+    position: relative;
+}
+
+.contestant-card img,
+.submission-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+}
+
+.submission-card .submission-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.submission-card .submission-actions button {
+    flex: 1;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.submission-card .submission-actions .approve-btn {
+    background: #2ecc71;
+    color: white;
+}
+
+.submission-card .submission-actions .approve-btn:hover {
+    background: #27ae60;
+}
+
+.submission-card .submission-actions .reject-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+.submission-card .submission-actions .reject-btn:hover {
+    background: #c0392b;
+}
+
+/* Статистика */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: #f8f9fa;
+    border-radius: 5px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-title {
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* Управление раундами */
+.rounds-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 5px;
+}
+
+.round-info {
+    font-size: 1.2rem;
+    color: #2c3e50;
+}
+
+.round-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Модальное окно */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Адаптивный дизайн */
+@media (max-width: 768px) {
+    .rounds-control {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .round-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .admin-button {
+        width: 100%;
+        justify-content: center;
+    }
+} 

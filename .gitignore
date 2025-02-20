@@ -1,0 +1,13 @@
+.env
+uploads/*
+!uploads/.gitkeep
+cache/*
+!cache/.gitkeep
+vendor/
+composer.lock
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+logs/*
+!logs/.gitkeep

@@ -1,0 +1,32 @@
+[
+    {
+        "id": 1,
+        "name": "Участница 1",
+        "image": "images/placeholder.jpg",
+        "rating": 1500
+    },
+    {
+        "id": 2,
+        "name": "Участница 2",
+        "image": "images/placeholder.jpg",
+        "rating": 1500
+    },
+    {
+        "id": 3,
+        "name": "Участница 3",
+        "image": "images/placeholder.jpg",
+        "rating": 1500
+    },
+    {
+        "id": 4,
+        "name": "Участница 4",
+        "image": "images/placeholder.jpg",
+        "rating": 1500
+    },
+    {
+        "id": 5,
+        "name": "Участница 5",
+        "image": "images/placeholder.jpg",
+        "rating": 1500
+    }
+] 

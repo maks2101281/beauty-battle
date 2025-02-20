@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beauty Battle - Голосование за самых красивых</title>
+    <meta name="description" content="Участвуйте в голосовании за самых красивых участников Beauty Battle">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Подключаем современные шрифты -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Подключаем иконки -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fas fa-crown"></i> Beauty Battle
+            </div>
+            <div class="nav-links">
+                <div class="stats">
+                    <span><i class="fas fa-vote-yea"></i> Голосов: <span id="total-votes">0</span></span>
+                </div>
+                <a href="submit.html" class="nav-button">
+                    <i class="fas fa-plus"></i> Предложить участника
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="battle-container">
+            <div class="battle-card left">
+                <div class="card-media">
+                    <img src="images/placeholder.jpg" alt="Участник 1" id="contestant1" class="lazy-image" data-src="images/placeholder.jpg">
+                </div>
+                <div class="card-content">
+                    <h2 class="contestant-name" id="name1">Участник 1</h2>
+                    <div class="vote-button tooltip" onclick="vote(1)" data-tooltip="Нажмите, чтобы проголосовать">
+                        <i class="fas fa-heart"></i> Голосовать
+                    </div>
+                    <div class="rating">
+                        <i class="fas fa-star"></i> Рейтинг: <span id="rating1">1500</span>
+                    </div>
+                    <button class="comments-button" onclick="toggleComments(1)">
+                        <i class="fas fa-comments"></i> Комментарии (<span id="comments-count-1">0</span>)
+                    </button>
+                </div>
+                <div class="comments-section" id="comments-1">
+                    <div class="comments-list"></div>
+                    <form class="comment-form" onsubmit="submitComment(event, 1)">
+                        <textarea placeholder="Оставьте комментарий..." maxlength="1000" required></textarea>
+                        <button type="submit">
+                            <i class="fas fa-paper-plane"></i> Отправить
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="vs-badge">
+                <i class="fas fa-bolt"></i>
+                <span>VS</span>
+            </div>
+
+            <div class="battle-card right">
+                <div class="card-media">
+                    <img src="images/placeholder.jpg" alt="Участник 2" id="contestant2" class="lazy-image" data-src="images/placeholder.jpg">
+                </div>
+                <div class="card-content">
+                    <h2 class="contestant-name" id="name2">Участник 2</h2>
+                    <div class="vote-button tooltip" onclick="vote(2)" data-tooltip="Нажмите, чтобы проголосовать">
+                        <i class="fas fa-heart"></i> Голосовать
+                    </div>
+                    <div class="rating">
+                        <i class="fas fa-star"></i> Рейтинг: <span id="rating2">1500</span>
+                    </div>
+                    <button class="comments-button" onclick="toggleComments(2)">
+                        <i class="fas fa-comments"></i> Комментарии (<span id="comments-count-2">0</span>)
+                    </button>
+                </div>
+                <div class="comments-section" id="comments-2">
+                    <div class="comments-list"></div>
+                    <form class="comment-form" onsubmit="submitComment(event, 2)">
+                        <textarea placeholder="Оставьте комментарий..." maxlength="1000" required></textarea>
+                        <button type="submit">
+                            <i class="fas fa-paper-plane"></i> Отправить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="battle-controls">
+            <button class="cancel-vote" onclick="cancelVote()" style="display: none;">
+                <i class="fas fa-undo"></i> Отменить голос
+            </button>
+            <button class="next-battle" onclick="nextBattle()">
+                <i class="fas fa-forward"></i> Следующая пара
+            </button>
+        </div>
+
+        <div class="round-info">
+            <div class="progress-bar">
+                <div class="progress" id="roundProgress"></div>
+            </div>
+            <span>Раунд <span id="currentRound">1</span> из 10</span>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <button class="leaderboard-button" onclick="showLeaderboard()">
+                <i class="fas fa-trophy"></i> Топ участников
+            </button>
+            <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-vk"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+            </div>
+            <div class="copyright">
+                © 2024 Beauty Battle. Все права защищены.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальное окно для лидерборда -->
+    <div id="leaderboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-trophy"></i> Топ участников</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div id="leaderboard-list">
+                <!-- Здесь будет список лидеров -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html> 

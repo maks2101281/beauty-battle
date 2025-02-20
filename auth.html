@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация - Beauty Battle</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">Beauty Battle</div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="auth-container">
+            <h1>Авторизация для голосования</h1>
+            
+            <!-- Шаг 1: Ввод Telegram -->
+            <div class="auth-step" id="telegramStep">
+                <div class="step-indicator">
+                    <div class="step active">
+                        <i class="fab fa-telegram"></i>
+                        <span>Telegram</span>
+                    </div>
+                    <div class="step">
+                        <i class="fas fa-key"></i>
+                        <span>Код подтверждения</span>
+                    </div>
+                </div>
+
+                <form id="telegramForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="telegram">Ваш Telegram:</label>
+                        <div class="telegram-input-container">
+                            <span class="telegram-prefix">@</span>
+                            <input type="text" id="telegram" name="telegram" 
+                                   placeholder="username"
+                                   required>
+                        </div>
+                        <p class="help-text">Код подтверждения будет отправлен в Telegram</p>
+                        <p class="help-text">
+                            <a href="https://t.me/AUTH_CE_BOT" target="_blank" class="telegram-link">
+                                <i class="fab fa-telegram"></i> Подписаться на бота
+                            </a>
+                        </p>
+                    </div>
+
+                    <button type="submit" class="auth-button">
+                        <i class="fas fa-arrow-right"></i> Получить код
+                    </button>
+                </form>
+            </div>
+
+            <!-- Шаг 2: Ввод кода -->
+            <div class="auth-step hidden" id="codeStep">
+                <div class="step-indicator">
+                    <div class="step completed">
+                        <i class="fas fa-check"></i>
+                        <span>Telegram</span>
+                    </div>
+                    <div class="step active">
+                        <i class="fas fa-key"></i>
+                        <span>Код подтверждения</span>
+                    </div>
+                </div>
+
+                <form id="codeForm" class="auth-form">
+                    <div class="form-group">
+                        <label>Введите код из Telegram:</label>
+                        <div class="code-inputs">
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                        </div>
+                        <p class="help-text">Код отправлен в Telegram: <span id="confirmedTelegram"></span></p>
+                    </div>
+
+                    <div class="code-timer">
+                        <span id="timerText">Запросить новый код через: </span>
+                        <span id="timer">60</span> сек
+                    </div>
+
+                    <button type="submit" class="auth-button">
+                        <i class="fas fa-check"></i> Подтвердить
+                    </button>
+
+                    <button type="button" id="backButton" class="auth-button secondary">
+                        <i class="fas fa-arrow-left"></i> Изменить Telegram
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="copyright">
+            © 2024 Beauty Battle. Все права защищены.
+        </div>
+    </footer>
+
+    <script src="js/auth.js"></script>
+</body>
+</html> 
