@@ -60,7 +60,34 @@ CACHE_LIFETIME=3600" > .env
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' /etc/apache2/sites-available/000-default.conf
 
+# Проверка и создание необходимых директорий
+RUN for dir in public/uploads/{photos,videos,thumbnails} cache logs public/errors; do \
+        if [ ! -d "$dir" ]; then \
+            mkdir -p "$dir" && \
+            chown www-data:www-data "$dir" && \
+            chmod 777 "$dir"; \
+        fi \
+    done
+
+# Проверка наличия файлов ошибок
+RUN for error in 404 500 403; do \
+        if [ ! -f "public/errors/${error}.html" ]; then \
+            echo "Error page ${error} not found" >&2; \
+            exit 1; \
+        fi \
+    done
+
+# Настройка PHP
+RUN echo "session.save_handler = files\n\
+session.save_path = /var/www/html/cache\n\
+session.gc_maxlifetime = 3600\n\
+session.cookie_lifetime = 3600\n\
+session.cookie_secure = On\n\
+session.cookie_httponly = On\n\
+session.use_strict_mode = On" > /usr/local/etc/php/conf.d/session.ini
+
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["apache2-foreground"] 
+# Запуск инициализации и Apache
+CMD ["sh", "-c", "php scripts/init_render_db.php && apache2-foreground"] 
