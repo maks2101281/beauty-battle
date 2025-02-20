@@ -2,7 +2,7 @@ services:
   - type: web
     name: beauty-battle
     env: docker
-    region: oregon
+    region: frankfurt
     plan: free
     healthCheckPath: /
     buildCommand: docker build -t beauty-battle .
@@ -11,21 +11,13 @@ services:
       - key: PORT
         value: 8080
       - key: DB_HOST
-        fromDatabase:
-          name: facemash-battle-db
-          property: host
+        value: dpg-curhd59u0jms73bu6n1g-a.frankfurt-postgres.render.com
       - key: DB_NAME
-        fromDatabase:
-          name: facemash-battle-db
-          property: database
+        value: facemash_battle
       - key: DB_USER
-        fromDatabase:
-          name: facemash-battle-db
-          property: user
+        value: facemash_battle_user
       - key: DB_PASSWORD
-        fromDatabase:
-          name: facemash-battle-db
-          property: password
+        value: 15pikTGIS74injOhP3Cjt171vbQOFuZA
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_BOT_USERNAME
@@ -35,6 +27,6 @@ services:
 
 databases:
   - name: facemash-battle-db
-    region: oregon
+    region: frankfurt
     plan: free
     ipAllowList: [] 
