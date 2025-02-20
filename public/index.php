@@ -1,5 +1,13 @@
 <?php
 require_once __DIR__ . '/../config/env.php';
+
+// Отладочная информация
+if (Env::get('APP_DEBUG', false)) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    Env::dump();
+}
+
 require_once __DIR__ . '/../config/database_render.php';
 
 // Маршрутизация
