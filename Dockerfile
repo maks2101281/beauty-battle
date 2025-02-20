@@ -33,21 +33,21 @@ RUN composer install --no-dev --optimize-autoloader
 COPY . .
 
 # Создание необходимых директорий
-RUN mkdir -p /var/www/html/public/uploads/photos \
-    && mkdir -p /var/www/html/public/uploads/videos \
-    && mkdir -p /var/www/html/public/uploads/thumbnails \
-    && mkdir -p /var/www/html/cache \
-    && mkdir -p /var/www/html/logs \
+RUN mkdir -p public/uploads/photos \
+    && mkdir -p public/uploads/videos \
+    && mkdir -p public/uploads/thumbnails \
+    && mkdir -p cache \
+    && mkdir -p logs \
     && mkdir -p /var/www/.postgresql
 
 # Установка прав доступа
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
-    && chmod -R 777 /var/www/html/public/uploads \
-    && chmod -R 777 /var/www/html/cache \
-    && chmod -R 777 /var/www/html/logs \
+    && chmod -R 777 public/uploads \
+    && chmod -R 777 cache \
+    && chmod -R 777 logs \
     && chmod -R 777 /var/www/.postgresql \
-    && chmod +x /var/www/html/scripts/render_start.sh
+    && chmod +x scripts/render_start.sh
 
 # Создание .env файла из переменных окружения
 RUN echo "DB_HOST=\${DB_HOST}\n\
@@ -65,7 +65,7 @@ SCRIPT_TIMEOUT=30\n\
 SESSION_LIFETIME=120\n\
 CSRF_TOKEN_LIFETIME=60\n\
 CACHE_ENABLED=true\n\
-CACHE_LIFETIME=3600" > /var/www/html/.env
+CACHE_LIFETIME=3600" > .env
 
 # Копирование конфигурации Apache
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
@@ -78,12 +78,12 @@ RUN cp /etc/ssl/certs/ca-certificates.crt /var/www/.postgresql/root.crt
 
 # Настройка Apache
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Порт по умолчанию
 ENV PORT=8080
 EXPOSE 8080
 
 # Запуск
-CMD apache2-foreground 
+CMD ["apache2-foreground"] 
