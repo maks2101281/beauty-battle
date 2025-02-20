@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/database_render.php';
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/AuthService.php';
 
 header('Content-Type: application/json');

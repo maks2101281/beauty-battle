@@ -132,12 +132,25 @@ document.getElementById('submitForm').addEventListener('submit', async function(
     formData.append('media', file);
     
     try {
-        const response = await fetch('/api/submit.php', {
+        const baseUrl = window.location.hostname === 'localhost' ? 
+            'http://localhost:8000' : 
+            window.location.origin;
+            
+        const response = await fetch(`${baseUrl}/api/submit.php`, {
             method: 'POST',
             body: formData,
+            mode: 'cors',
             credentials: 'include',
-            mode: 'cors'
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
         
@@ -150,6 +163,7 @@ document.getElementById('submitForm').addEventListener('submit', async function(
             throw new Error(result.error || 'Произошла ошибка при отправке');
         }
     } catch (error) {
+        console.error('Error:', error);
         showNotification(error.message, 'error');
     }
 });

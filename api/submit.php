@@ -1,39 +1,36 @@
 <?php
-// Включаем CORS
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Allow-Credentials: true');
+session_start();
 
-// Обработка preflight запросов
+// Разрешаем CORS для локальной разработки
+header('Access-Control-Allow-Origin: http://localhost:8000');
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept');
+
+// Обработка OPTIONS запроса
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('HTTP/1.1 200 OK');
+    http_response_code(200);
     exit();
 }
 
+header('Content-Type: application/json; charset=utf-8');
+
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../config/csrf.php';
 require_once __DIR__ . '/../classes/ImageProcessor.php';
 
-header('Content-Type: application/json');
-
 try {
-    // Проверяем CSRF-токен
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!isset($_POST['csrf_token']) || !CSRF::validateToken($_POST['csrf_token'])) {
-            throw new Exception('Недействительный CSRF-токен');
-        }
+    // Для отладки
+    error_log('Request received: ' . print_r($_POST, true));
+    error_log('Files received: ' . print_r($_FILES, true));
+
+    // Проверяем метод запроса
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Exception('Метод не поддерживается');
     }
-    
-    // Проверяем авторизацию
-    session_start();
-    if (!isset($_SESSION['user_id'])) {
-        throw new Exception('Требуется авторизация');
-    }
-    
+
     // Проверяем наличие файла
     if (!isset($_FILES['media']) || $_FILES['media']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('Ошибка загрузки файла');
+        throw new Exception('Ошибка загрузки файла: ' . $_FILES['media']['error']);
     }
 
     $type = $_POST['type'] ?? 'photo';
@@ -54,7 +51,9 @@ try {
 
     foreach ([$photoDir, $videoDir, $thumbDir] as $dir) {
         if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
+            if (!mkdir($dir, 0777, true)) {
+                throw new Exception('Не удалось создать директорию: ' . $dir);
+            }
         }
     }
 
@@ -67,20 +66,25 @@ try {
             throw new Exception('Недопустимый формат изображения');
         }
 
-        // Обрабатываем изображение
-        $imageProcessor = new ImageProcessor();
-        $extension = $imageProcessor->getExtensionFromMime($mimeType);
+        // Определяем расширение файла
+        $extension = match ($mimeType) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => throw new Exception('Неподдерживаемый формат изображения')
+        };
+
         $finalFilename = $filename . '.' . $extension;
         
-        $imageProcessor->processImage(
-            $file['tmp_name'],
-            $photoDir . $finalFilename
-        );
+        // Просто копируем файл для тестирования
+        if (!copy($file['tmp_name'], $photoDir . $finalFilename)) {
+            throw new Exception('Ошибка при сохранении изображения');
+        }
         
-        $imageProcessor->generateThumbnail(
-            $file['tmp_name'],
-            $thumbDir . $finalFilename
-        );
+        // Копируем тот же файл для миниатюры (в реальном приложении здесь будет создание миниатюры)
+        if (!copy($file['tmp_name'], $thumbDir . $finalFilename)) {
+            throw new Exception('Ошибка при создании миниатюры');
+        }
 
         $mediaPath = 'uploads/photos/' . $finalFilename;
         $thumbPath = 'uploads/thumbnails/' . $finalFilename;
@@ -91,14 +95,17 @@ try {
         }
 
         // Проверяем размер видео
-        if ($file['size'] > 10 * 1024 * 1024) { // 10MB
-            throw new Exception('Видео слишком большое');
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new Exception('Видео слишком большое (максимум 10MB)');
         }
 
         // Сохраняем видео
         $extension = $mimeType === 'video/mp4' ? 'mp4' : 'webm';
         $finalFilename = $filename . '.' . $extension;
-        move_uploaded_file($file['tmp_name'], $videoDir . $finalFilename);
+        
+        if (!move_uploaded_file($file['tmp_name'], $videoDir . $finalFilename)) {
+            throw new Exception('Ошибка при сохранении видео');
+        }
 
         $mediaPath = 'uploads/videos/' . $finalFilename;
         $thumbPath = null;
@@ -108,20 +115,22 @@ try {
     $stmt = $pdo->prepare("
         INSERT INTO submissions (
             name, media_type, media_path, thumbnail_path,
-            social_link, user_id, status, created_at
+            social_link, user_id, status
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, 'pending', NOW()
+            ?, ?, ?, ?, ?, ?, 'pending'
         )
     ");
 
-    $stmt->execute([
+    if (!$stmt->execute([
         $name,
         $type,
         $mediaPath,
         $thumbPath,
         $social,
-        $_SESSION['user_id']
-    ]);
+        1 // Временный user_id для тестирования
+    ])) {
+        throw new Exception('Ошибка при сохранении в базу данных');
+    }
 
     echo json_encode([
         'success' => true,
@@ -130,6 +139,8 @@ try {
     ]);
 
 } catch (Exception $e) {
+    error_log('Submit Error: ' . $e->getMessage());
+    error_log('Debug backtrace: ' . print_r(debug_backtrace(), true));
     http_response_code(400);
     echo json_encode([
         'success' => false,

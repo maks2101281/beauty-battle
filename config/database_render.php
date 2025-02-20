@@ -2,7 +2,7 @@
 require_once __DIR__ . '/env.php';
 
 try {
-    // Формируем строку подключения
+    // Получаем параметры подключения
     $host = getenv('DB_HOST') ?: Env::get('DB_HOST');
     $dbname = getenv('DB_NAME') ?: Env::get('DB_NAME');
     $user = getenv('DB_USER') ?: Env::get('DB_USER');
@@ -13,31 +13,8 @@ try {
         $host .= '.oregon-postgres.render.com';
     }
 
-    // Создаем директорию для сертификата если её нет
-    $certDir = '/var/www/.postgresql';
-    if (!file_exists($certDir)) {
-        mkdir($certDir, 0755, true);
-    }
-
     // Путь к файлу сертификата
-    $certFile = $certDir . '/root.crt';
-
-    // Если сертификата нет, копируем его из системного пути
-    if (!file_exists($certFile)) {
-        $systemCerts = [
-            '/etc/ssl/certs/ca-certificates.crt',
-            '/etc/ssl/certs/ca-bundle.crt',
-            '/etc/pki/tls/certs/ca-bundle.crt',
-            '/etc/ssl/cert.pem'
-        ];
-
-        foreach ($systemCerts as $cert) {
-            if (file_exists($cert)) {
-                copy($cert, $certFile);
-                break;
-            }
-        }
-    }
+    $certFile = '/var/www/.postgresql/root.crt';
 
     // Проверяем наличие сертификата
     if (file_exists($certFile)) {
@@ -56,34 +33,25 @@ try {
             $dbname
         );
     }
-    
-    if (Env::get('APP_DEBUG', false)) {
-        error_log("Connecting to database with DSN: " . str_replace($password, '***', $dsn));
-        error_log("Certificate path: " . $certFile);
-        error_log("Certificate exists: " . (file_exists($certFile) ? 'Yes' : 'No'));
-    }
-    
+
+    // Настройки PDO
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_TIMEOUT => 60, // Увеличиваем таймаут до 60 секунд
-        PDO::ATTR_PERSISTENT => true // Используем постоянное соединение
+        PDO::ATTR_PERSISTENT => true
     ];
-    
+
+    // Создаем подключение
     $pdo = new PDO($dsn, $user, $password, $options);
-    
+
     // Устанавливаем таймзону
     $pdo->exec("SET timezone = 'Europe/Moscow'");
-    
+
 } catch (PDOException $e) {
-    if (Env::get('APP_DEBUG', false)) {
-        error_log("Database connection error: " . $e->getMessage());
-        error_log("Connection details: host={$host}, dbname={$dbname}, user={$user}");
-        error_log("DSN: " . str_replace($password, '***', $dsn));
-        error_log("Certificate directory exists: " . (file_exists($certDir) ? 'Yes' : 'No'));
-        error_log("Certificate file exists: " . (file_exists($certFile) ? 'Yes' : 'No'));
-        throw $e;
-    }
-    die('Database connection failed: ' . $e->getMessage());
+    error_log("Database connection error: " . $e->getMessage());
+    error_log("Connection details: host={$host}, dbname={$dbname}, user={$user}");
+    error_log("DSN: " . str_replace($password, '***', $dsn));
+    error_log("Certificate exists: " . (file_exists($certFile) ? 'Yes' : 'No'));
+    throw $e;
 }
