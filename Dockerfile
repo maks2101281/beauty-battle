@@ -11,82 +11,36 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-    pdo \
-    pdo_pgsql \
-    pgsql \
-    gd
+    && docker-php-ext-install -j$(nproc) pdo pdo_pgsql pgsql gd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Установка composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# Создание рабочей директории
+# Создание рабочей директории и настройка прав
 WORKDIR /var/www/html
+RUN mkdir -p public/uploads/{photos,videos,thumbnails} cache logs /var/www/.postgresql \
+    && chown -R www-data:www-data . \
+    && chmod -R 755 . \
+    && chmod -R 777 public/uploads cache logs /var/www/.postgresql
 
-# Копирование только composer.json
-COPY composer.json .
+# Копирование файлов проекта
+COPY --chown=www-data:www-data composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Установка зависимостей composer
-RUN composer install --no-dev --optimize-autoloader
-
-# Копирование остальных файлов проекта
-COPY . .
-
-# Создание необходимых директорий и установка прав
-RUN mkdir -p /var/www/html/public/uploads/photos \
-    && mkdir -p /var/www/html/public/uploads/videos \
-    && mkdir -p /var/www/html/public/uploads/thumbnails \
-    && mkdir -p /var/www/html/cache \
-    && mkdir -p /var/www/html/logs \
-    && mkdir -p /var/www/.postgresql
-
-# Установка прав доступа
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 777 /var/www/html/public/uploads \
-    && chmod -R 777 /var/www/html/cache \
-    && chmod -R 777 /var/www/html/logs \
-    && chmod -R 777 /var/www/.postgresql \
-    && chmod +x scripts/render_start.sh
-
-# Создание .env файла из переменных окружения
-RUN echo "DB_HOST=\${DB_HOST}\n\
-DB_NAME=\${DB_NAME}\n\
-DB_USER=\${DB_USER}\n\
-DB_PASSWORD=\${DB_PASSWORD}\n\
-TELEGRAM_BOT_TOKEN=\${TELEGRAM_BOT_TOKEN}\n\
-TELEGRAM_BOT_USERNAME=\${TELEGRAM_BOT_USERNAME}\n\
-APP_URL=\${APP_URL}\n\
-APP_ENV=production\n\
-APP_DEBUG=false\n\
-UPLOAD_MAX_SIZE=2097152\n\
-IMAGE_QUALITY=70\n\
-SCRIPT_TIMEOUT=30\n\
-SESSION_LIFETIME=120\n\
-CSRF_TOKEN_LIFETIME=60\n\
-CACHE_ENABLED=true\n\
-CACHE_LIFETIME=3600" > .env
-
-# Копирование конфигурации Apache
-COPY apache.conf /etc/apache2/sites-available/000-default.conf
-
-# Включение модулей Apache
-RUN a2enmod rewrite headers
-
-# Копирование SSL сертификата
-RUN cp /etc/ssl/certs/ca-certificates.crt /var/www/.postgresql/root.crt
+COPY --chown=www-data:www-data . .
 
 # Настройка Apache
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
+RUN a2enmod rewrite headers \
+    && cp /etc/ssl/certs/ca-certificates.crt /var/www/.postgresql/root.crt
+
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Создаем символическую ссылку для правильной работы DocumentRoot
-RUN ln -s /var/www/html/public /var/www/html/public/public
-
-# Порт по умолчанию
 ENV PORT=8080
 EXPOSE 8080
 
-# Запуск
 CMD ["apache2-foreground"] 
