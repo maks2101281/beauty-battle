@@ -23,4 +23,4 @@ try {
         throw $e;
     }
     die('Database connection failed: ' . $e->getMessage());
-} 
+}
