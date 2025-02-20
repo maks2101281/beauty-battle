@@ -32,20 +32,20 @@ RUN composer install --no-dev --optimize-autoloader
 # Копирование остальных файлов проекта
 COPY . .
 
-# Создание необходимых директорий
-RUN mkdir -p public/uploads/photos \
-    && mkdir -p public/uploads/videos \
-    && mkdir -p public/uploads/thumbnails \
-    && mkdir -p cache \
-    && mkdir -p logs \
+# Создание необходимых директорий и установка прав
+RUN mkdir -p /var/www/html/public/uploads/photos \
+    && mkdir -p /var/www/html/public/uploads/videos \
+    && mkdir -p /var/www/html/public/uploads/thumbnails \
+    && mkdir -p /var/www/html/cache \
+    && mkdir -p /var/www/html/logs \
     && mkdir -p /var/www/.postgresql
 
 # Установка прав доступа
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
-    && chmod -R 777 public/uploads \
-    && chmod -R 777 cache \
-    && chmod -R 777 logs \
+    && chmod -R 777 /var/www/html/public/uploads \
+    && chmod -R 777 /var/www/html/cache \
+    && chmod -R 777 /var/www/html/logs \
     && chmod -R 777 /var/www/.postgresql \
     && chmod +x scripts/render_start.sh
 
@@ -80,6 +80,9 @@ RUN cp /etc/ssl/certs/ca-certificates.crt /var/www/.postgresql/root.crt
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Создаем символическую ссылку для правильной работы DocumentRoot
+RUN ln -s /var/www/html/public /var/www/html/public/public
 
 # Порт по умолчанию
 ENV PORT=8080
