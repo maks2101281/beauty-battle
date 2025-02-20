@@ -1,0 +1,335 @@
+/* Стили для админ-панели */
+.admin-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Секции */
+.admin-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.section-header h2 {
+    color: var(--text);
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-header h2 i {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+/* Статистика */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.stat-title {
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Формы */
+.admin-form {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    background: var(--card-bg);
+    color: var(--text);
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.help-text {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+/* Медиа превью */
+.media-preview {
+    width: 100%;
+    height: 200px;
+    border: 2px dashed rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background-size: cover;
+    background-position: center;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.media-preview:hover {
+    border-color: var(--primary);
+    background-color: rgba(79, 70, 229, 0.05);
+}
+
+.media-preview i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+/* Сетка участников */
+.contestants-grid,
+.submissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.contestant-card,
+.submission-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+}
+
+.contestant-card:hover,
+.submission-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.contestant-card img,
+.submission-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-content {
+    padding: 1rem;
+}
+
+/* Действия с карточками */
+.card-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.card-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.card-action:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    margin: 2rem auto;
+    box-shadow: var(--shadow-lg);
+    animation: slideIn 0.3s ease-out;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text);
+    font-size: 1.25rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-actions {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: var(--transition);
+}
+
+.close-button:hover {
+    color: var(--danger);
+}
+
+/* Адаптивный дизайн */
+@media (max-width: 768px) {
+    .admin-section {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .contestants-grid,
+    .submissions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions button {
+        width: 100%;
+    }
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Дополнительные стили для тёмной темы */
+@media (prefers-color-scheme: dark) {
+    .stat-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    }
+    
+    .form-input,
+    .form-select {
+        background: rgba(0, 0, 0, 0.1);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .media-preview {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .card-action {
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+    }
+} 

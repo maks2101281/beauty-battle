@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beauty Battle - Голосование за самых красивых</title>
+    <meta name="description" content="Участвуйте в голосовании за самых красивых участников Beauty Battle">
+    <!-- Добавляем современный шрифт Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Подключаем иконки -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Основные стили -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fas fa-crown"></i> Beauty Battle
+            </div>
+            <div class="nav-links">
+                <div class="stats">
+                    <span class="stat-item">
+                        <i class="fas fa-vote-yea"></i> 
+                        Голосов: <span id="total-votes" class="stat-value">0</span>
+                    </span>
+                    <span class="stat-item">
+                        <i class="fas fa-users"></i>
+                        Участников: <span id="total-contestants" class="stat-value">0</span>
+                    </span>
+                </div>
+                <a href="submit.html" class="action-button">
+                    <i class="fas fa-plus"></i> Предложить участника
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="battle-container">
+            <div class="battle-card left">
+                <div class="card-media">
+                    <img src="images/placeholder.jpg" alt="Участник 1" id="contestant1" class="lazy-image">
+                </div>
+                <div class="card-content">
+                    <h2 class="contestant-name" id="name1">Участник 1</h2>
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        Рейтинг: <span id="rating1">1500</span>
+                    </div>
+                    <button class="vote-button" onclick="vote(1)">
+                        <i class="fas fa-heart"></i> Голосовать
+                    </button>
+                    <button class="action-button secondary comments-button" onclick="toggleComments(1)">
+                        <i class="fas fa-comments"></i>
+                        Комментарии (<span id="comments-count-1">0</span>)
+                    </button>
+                </div>
+                <div class="comments-section" id="comments-1">
+                    <div class="comments-list"></div>
+                    <form class="comment-form" onsubmit="submitComment(event, 1)">
+                        <textarea placeholder="Оставьте комментарий..." maxlength="1000" required></textarea>
+                        <button type="submit" class="action-button">
+                            <i class="fas fa-paper-plane"></i> Отправить
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="vs-badge">VS</div>
+
+            <div class="battle-card right">
+                <div class="card-media">
+                    <img src="images/placeholder.jpg" alt="Участник 2" id="contestant2" class="lazy-image">
+                </div>
+                <div class="card-content">
+                    <h2 class="contestant-name" id="name2">Участник 2</h2>
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        Рейтинг: <span id="rating2">1500</span>
+                    </div>
+                    <button class="vote-button" onclick="vote(2)">
+                        <i class="fas fa-heart"></i> Голосовать
+                    </button>
+                    <button class="action-button secondary comments-button" onclick="toggleComments(2)">
+                        <i class="fas fa-comments"></i>
+                        Комментарии (<span id="comments-count-2">0</span>)
+                    </button>
+                </div>
+                <div class="comments-section" id="comments-2">
+                    <div class="comments-list"></div>
+                    <form class="comment-form" onsubmit="submitComment(event, 2)">
+                        <textarea placeholder="Оставьте комментарий..." maxlength="1000" required></textarea>
+                        <button type="submit" class="action-button">
+                            <i class="fas fa-paper-plane"></i> Отправить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="battle-controls">
+            <button class="action-button secondary" onclick="cancelVote()" style="display: none;">
+                <i class="fas fa-undo"></i> Отменить голос
+            </button>
+            <button class="action-button" onclick="nextBattle()">
+                <i class="fas fa-forward"></i> Следующая пара
+            </button>
+        </div>
+
+        <div class="round-info">
+            <div class="progress-bar">
+                <div class="progress" id="roundProgress"></div>
+            </div>
+            <span>Раунд <span id="currentRound">1</span> из 10</span>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>О проекте</h3>
+                <p>Beauty Battle - платформа для голосования за самых красивых участников.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Следите за нами</h3>
+                <div class="social-links">
+                    <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-vk"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3>Статистика</h3>
+                <button class="action-button" onclick="showLeaderboard()">
+                    <i class="fas fa-trophy"></i> Топ участников
+                </button>
+            </div>
+        </div>
+        <div class="copyright">
+            © 2024 Beauty Battle. Все права защищены.
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html> 

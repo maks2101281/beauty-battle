@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель - Beauty Battle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fas fa-crown"></i> Beauty Battle - Админ-панель
+            </div>
+            <div class="admin-nav">
+                <a href="index.html" class="action-button secondary">
+                    <i class="fas fa-home"></i> На главную
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="admin-container">
+            <!-- Переключатель категорий -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-toggle-on"></i> Выбор категории</h2>
+                </div>
+                <div class="category-switch">
+                    <button onclick="switchCategory('female')" class="action-button" id="femaleBtn">
+                        <i class="fas fa-venus"></i> Девушки
+                    </button>
+                    <button onclick="switchCategory('male')" class="action-button" id="maleBtn">
+                        <i class="fas fa-mars"></i> Парни
+                    </button>
+                </div>
+            </section>
+
+            <!-- Статистика -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Статистика</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-title">Всего участников</div>
+                        <div class="stat-value" id="totalContestants">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-vote-yea"></i></div>
+                        <div class="stat-title">Всего голосов</div>
+                        <div class="stat-value" id="totalVotes">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-title">Активных голосований</div>
+                        <div class="stat-value" id="activeVotes">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Форма добавления нового участника -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-plus-circle"></i> Добавить участника</h2>
+                </div>
+                <form id="addContestantForm" class="admin-form">
+                    <div class="form-group">
+                        <label for="name">Имя участника:</label>
+                        <input type="text" id="name" name="name" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Пол:</label>
+                        <select id="gender" name="gender" required class="form-select">
+                            <option value="female">Девушка</option>
+                            <option value="male">Парень</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="photo">Фотография:</label>
+                        <div class="media-preview" id="photoPreview">
+                            <i class="fas fa-image"></i>
+                            <span>Нажмите или перетащите фото</span>
+                        </div>
+                        <input type="file" id="photo" name="photo" accept="image/*" required class="hidden">
+                    </div>
+                    <button type="submit" class="action-button">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
+                </form>
+            </section>
+
+            <!-- Предложенные участники -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-inbox"></i> Предложенные участники</h2>
+                </div>
+                <div class="submissions-grid" id="submissionsList">
+                    <!-- Здесь будет список предложенных участников -->
+                </div>
+            </section>
+
+            <!-- Управление участниками -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-users"></i> Управление участниками</h2>
+                </div>
+                <div class="list-actions">
+                    <button onclick="deleteAllContestants()" class="action-button danger">
+                        <i class="fas fa-trash"></i> Удалить всех
+                    </button>
+                    <button onclick="selectAllContestants()" class="action-button">
+                        <i class="fas fa-check-square"></i> Выбрать всех
+                    </button>
+                    <button onclick="deleteSelectedContestants()" class="action-button danger" id="deleteSelectedBtn" style="display: none;">
+                        <i class="fas fa-trash"></i> Удалить выбранных
+                    </button>
+                </div>
+                <div class="contestants-grid" id="contestantsList">
+                    <!-- Здесь будет список участников -->
+                </div>
+            </section>
+
+            <!-- Управление раундами -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-trophy"></i> Управление раундами</h2>
+                </div>
+                <div class="rounds-control">
+                    <div class="round-info">
+                        <span>Текущий раунд: <strong id="currentRound">0</strong>/10</span>
+                    </div>
+                    <div class="round-actions">
+                        <button onclick="resetRounds()" class="action-button danger">
+                            <i class="fas fa-redo"></i> Сбросить раунды
+                        </button>
+                        <button onclick="startNewRound()" class="action-button success">
+                            <i class="fas fa-play"></i> Начать новый раунд
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Настройки голосования -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> Настройки голосования</h2>
+                </div>
+                <form id="votingSettingsForm" class="admin-form">
+                    <div class="form-group">
+                        <label for="requiredVotes">Необходимое количество голосов:</label>
+                        <input type="number" id="requiredVotes" name="requiredVotes" 
+                               min="1" value="50" required class="form-input">
+                        <p class="help-text">Количество голосов для прохождения в следующий этап</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="finalVotingTime">Длительность финала (часов):</label>
+                        <input type="number" id="finalVotingTime" name="finalVotingTime" 
+                               min="1" value="24" required class="form-input">
+                        <p class="help-text">Время на финальное голосование</p>
+                    </div>
+
+                    <button type="submit" class="action-button">
+                        <i class="fas fa-save"></i> Сохранить настройки
+                    </button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <!-- Модальное окно подтверждения -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Подтверждение</h3>
+                <button onclick="closeModal('confirmModal')" class="close-button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-actions">
+                <button onclick="confirmAction()" class="action-button danger">
+                    <i class="fas fa-check"></i> Подтвердить
+                </button>
+                <button onclick="closeModal('confirmModal')" class="action-button secondary">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="copyright">
+            © 2024 Beauty Battle. Все права защищены.
+        </div>
+    </footer>
+
+    <script src="js/admin.js"></script>
+</body>
+</html> 

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Предложить участника - Beauty Battle</title>
+    <meta name="description" content="Предложите нового участника для Beauty Battle">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="index.html" class="logo-link">
+                    <i class="fas fa-crown"></i> Beauty Battle
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="submit-container">
+            <div class="submit-card">
+                <h1><i class="fas fa-plus-circle"></i> Предложить участника</h1>
+                
+                <form id="submitForm" class="submit-form" enctype="multipart/form-data">
+                    <?php echo CSRF::getTokenField(); ?>
+                    
+                    <div class="form-group">
+                        <label for="name">Имя участника:</label>
+                        <input type="text" id="name" name="name" required 
+                               placeholder="Введите имя участника"
+                               minlength="2" maxlength="50"
+                               class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="photo">Фотография:</label>
+                        <div class="media-preview" id="photoPreview">
+                            <i class="fas fa-image"></i>
+                            <span>Нажмите или перетащите фото</span>
+                        </div>
+                        <input type="file" id="photo" name="photo" 
+                               accept="image/*" required
+                               class="hidden">
+                        <p class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Рекомендуемый размер: 800x1000 пикселей, до 5 МБ
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="social">Ссылка на соцсеть (необязательно):</label>
+                        <div class="input-group">
+                            <i class="fas fa-link input-icon"></i>
+                            <input type="url" id="social" name="social"
+                                   placeholder="https://instagram.com/username"
+                                   class="form-input">
+                        </div>
+                        <p class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Instagram, VK или Telegram
+                        </p>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" required>
+                            <span class="checkbox-text">
+                                Я подтверждаю, что имею права на использование фото
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="action-button">
+                            <i class="fas fa-paper-plane"></i> Отправить
+                        </button>
+
+                        <a href="index.html" class="action-button secondary">
+                            <i class="fas fa-arrow-left"></i> Вернуться к голосованию
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>О проекте</h3>
+                <p>Beauty Battle - платформа для голосования за самых красивых участников.</p>
+            </div>
+            <div class="footer-section">
+                <div class="social-links">
+                    <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-vk"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            © 2024 Beauty Battle. Все права защищены.
+        </div>
+    </footer>
+
+    <script src="js/submit.js"></script>
+</body>
+</html> 
