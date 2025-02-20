@@ -59,7 +59,7 @@ echo "File upload checks completed"
 
 # Настройка Telegram бота
 echo "Setting up Telegram bot..."
-php scripts/check_telegram.php
+php scripts/setup_bot.php
 echo "Telegram bot setup completed"
 
 # Настройка Apache
