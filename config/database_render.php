@@ -13,16 +13,54 @@ try {
         $host .= '.oregon-postgres.render.com';
     }
 
-    // Создаем DSN с расширенными параметрами подключения
-    $dsn = sprintf(
-        "pgsql:host=%s;port=5432;dbname=%s;sslmode=verify-ca;sslcert=/etc/ssl/certs/ca-certificates.crt",
-        $host,
-        $dbname
-    );
+    // Создаем директорию для сертификата если её нет
+    $certDir = '/var/www/.postgresql';
+    if (!file_exists($certDir)) {
+        mkdir($certDir, 0755, true);
+    }
+
+    // Путь к файлу сертификата
+    $certFile = $certDir . '/root.crt';
+
+    // Если сертификата нет, копируем его из системного пути
+    if (!file_exists($certFile)) {
+        $systemCerts = [
+            '/etc/ssl/certs/ca-certificates.crt',
+            '/etc/ssl/certs/ca-bundle.crt',
+            '/etc/pki/tls/certs/ca-bundle.crt',
+            '/etc/ssl/cert.pem'
+        ];
+
+        foreach ($systemCerts as $cert) {
+            if (file_exists($cert)) {
+                copy($cert, $certFile);
+                break;
+            }
+        }
+    }
+
+    // Проверяем наличие сертификата
+    if (file_exists($certFile)) {
+        // Используем verify-full с указанием пути к сертификату
+        $dsn = sprintf(
+            "pgsql:host=%s;port=5432;dbname=%s;sslmode=verify-full;sslcert=%s",
+            $host,
+            $dbname,
+            $certFile
+        );
+    } else {
+        // Если сертификат не найден, используем режим require без проверки
+        $dsn = sprintf(
+            "pgsql:host=%s;port=5432;dbname=%s;sslmode=require",
+            $host,
+            $dbname
+        );
+    }
     
     if (Env::get('APP_DEBUG', false)) {
         error_log("Connecting to database with DSN: " . str_replace($password, '***', $dsn));
-        error_log("SSL Certificate path exists: " . (file_exists('/etc/ssl/certs/ca-certificates.crt') ? 'Yes' : 'No'));
+        error_log("Certificate path: " . $certFile);
+        error_log("Certificate exists: " . (file_exists($certFile) ? 'Yes' : 'No'));
     }
     
     $options = [
@@ -32,28 +70,6 @@ try {
         PDO::ATTR_TIMEOUT => 60, // Увеличиваем таймаут до 60 секунд
         PDO::ATTR_PERSISTENT => true // Используем постоянное соединение
     ];
-    
-    // Проверяем наличие SSL сертификата
-    if (!file_exists('/etc/ssl/certs/ca-certificates.crt')) {
-        // Если сертификата нет, пробуем альтернативные пути
-        $altPaths = [
-            '/etc/ssl/certs/ca-bundle.crt',
-            '/etc/pki/tls/certs/ca-bundle.crt',
-            '/etc/ssl/cert.pem'
-        ];
-        
-        foreach ($altPaths as $path) {
-            if (file_exists($path)) {
-                $dsn = sprintf(
-                    "pgsql:host=%s;port=5432;dbname=%s;sslmode=verify-ca;sslcert=%s",
-                    $host,
-                    $dbname,
-                    $path
-                );
-                break;
-            }
-        }
-    }
     
     $pdo = new PDO($dsn, $user, $password, $options);
     
@@ -65,6 +81,8 @@ try {
         error_log("Database connection error: " . $e->getMessage());
         error_log("Connection details: host={$host}, dbname={$dbname}, user={$user}");
         error_log("DSN: " . str_replace($password, '***', $dsn));
+        error_log("Certificate directory exists: " . (file_exists($certDir) ? 'Yes' : 'No'));
+        error_log("Certificate file exists: " . (file_exists($certFile) ? 'Yes' : 'No'));
         throw $e;
     }
     die('Database connection failed: ' . $e->getMessage());
