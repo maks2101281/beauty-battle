@@ -15,9 +15,6 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка composer
-COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
-
 # Создание рабочей директории и настройка прав
 WORKDIR /var/www/html
 RUN mkdir -p public/uploads/{photos,videos,thumbnails} cache logs /var/www/.postgresql \
@@ -26,9 +23,6 @@ RUN mkdir -p public/uploads/{photos,videos,thumbnails} cache logs /var/www/.post
     && chmod -R 777 public/uploads cache logs /var/www/.postgresql
 
 # Копирование файлов проекта
-COPY --chown=www-data:www-data composer.json ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts
-
 COPY --chown=www-data:www-data . .
 
 # Настройка Apache
