@@ -13,8 +13,8 @@ try {
         $host .= '.oregon-postgres.render.com';
     }
 
-    // Создаем DSN с расширенными параметрами SSL
-    $dsn = "pgsql:host={$host};dbname={$dbname};sslmode=verify-full;sslcert=/etc/ssl/certs/ca-certificates.crt";
+    // Создаем DSN с параметрами SSL
+    $dsn = "pgsql:host={$host};dbname={$dbname};sslmode=require";
     
     if (Env::get('APP_DEBUG', false)) {
         error_log("Connecting to database with DSN: " . str_replace($password, '***', $dsn));
@@ -24,8 +24,7 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_TIMEOUT => 30, // Увеличиваем таймаут
-        PDO::PGSQL_ATTR_SSL_MODE => PDO::PGSQL_SSL_VERIFY_FULL
+        PDO::ATTR_TIMEOUT => 30 // Увеличиваем таймаут
     ];
     
     $pdo = new PDO($dsn, $user, $password, $options);
