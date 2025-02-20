@@ -5,28 +5,62 @@ services:
     region: frankfurt
     plan: free
     healthCheckPath: /
-    buildCommand: docker build -t beauty-battle .
-    startCommand: docker run --init -p 8080:8080 beauty-battle
+    buildCommand: |
+      # Создаем необходимые директории
+      mkdir -p public/uploads/{photos,videos,thumbnails} cache logs public/errors
+      # Копируем SSL сертификат
+      mkdir -p /var/www/.postgresql
+      cp /etc/ssl/certs/ca-certificates.crt /var/www/.postgresql/root.crt
+      # Собираем Docker образ
+      docker build -t beauty-battle .
+    startCommand: docker run -p $PORT:8080 beauty-battle
     envVars:
       - key: PORT
         value: 8080
       - key: DB_HOST
-        value: dpg-curhd59u0jms73bu6n1g-a.frankfurt-postgres.render.com
+        fromDatabase:
+          name: facemash-battle-db
+          property: host
       - key: DB_NAME
-        value: facemash_battle
+        fromDatabase:
+          name: facemash-battle-db
+          property: database
       - key: DB_USER
-        value: facemash_battle_user
+        fromDatabase:
+          name: facemash-battle-db
+          property: user
       - key: DB_PASSWORD
-        value: 15pikTGIS74injOhP3Cjt171vbQOFuZA
+        fromDatabase:
+          name: facemash-battle-db
+          property: password
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_BOT_USERNAME
         sync: false
       - key: APP_URL
         sync: false
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+    disk:
+      name: data
+      mountPath: /var/www/html/public/uploads
+      sizeGB: 1
 
 databases:
   - name: facemash-battle-db
     region: frankfurt
     plan: free
-    ipAllowList: [] 
+    ipAllowList: []
+    postDeploy: |
+      # Инициализация базы данных
+      php scripts/init_render_db.php
+
+# Настройка постоянного хранилища
+disks:
+  - name: data
+    region: frankfurt
+    plan: free
+    sizeGB: 1
+    mountPath: /var/www/html/public/uploads 
