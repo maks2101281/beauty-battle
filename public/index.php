@@ -14,6 +14,12 @@ require_once __DIR__ . '/../config/database_render.php';
 $uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($uri, PHP_URL_PATH);
 
+// Специальная обработка для админ-панели
+if ($path === '/admin.html' || $path === '/admin') {
+    require_once __DIR__ . '/admin-check.php';
+    exit;
+}
+
 // Обработка API запросов
 if (strpos($path, '/api/') === 0) {
     $apiFile = __DIR__ . '/..' . $path;

@@ -2,12 +2,19 @@
 require_once __DIR__ . '/env.php';
 
 try {
+    // Формируем строку подключения
+    $host = Env::get('DB_HOST');
+    $dbname = Env::get('DB_NAME');
+    $user = Env::get('DB_USER');
+    $password = Env::get('DB_PASSWORD');
+
+    // Создаем DSN с явным указанием порта и SSL режима
+    $dsn = "pgsql:host={$host};dbname={$dbname};sslmode=require";
+    
     $pdo = new PDO(
-        "pgsql:host=" . Env::get('DB_HOST') . 
-        ";dbname=" . Env::get('DB_NAME') . 
-        ";sslmode=require",
-        Env::get('DB_USER'),
-        Env::get('DB_PASSWORD'),
+        $dsn,
+        $user,
+        $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
