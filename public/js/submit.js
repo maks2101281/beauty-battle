@@ -134,7 +134,9 @@ document.getElementById('submitForm').addEventListener('submit', async function(
     try {
         const response = await fetch('/api/submit.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'include',
+            mode: 'cors'
         });
         
         const result = await response.json();
