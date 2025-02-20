@@ -58,7 +58,7 @@ CACHE_LIFETIME=3600" > .env
 
 # Настройка DocumentRoot
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' /etc/apache2/sites-available/000-default.conf
 
 ENV PORT=8080
 EXPOSE 8080
