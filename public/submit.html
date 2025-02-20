@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/submit.css">
     <style>
         .submit-container {
             max-width: 600px;
@@ -192,11 +193,9 @@
 <body>
     <header>
         <nav>
-            <div class="logo">
-                <a href="index.html" class="logo-link">
-                    <i class="fas fa-crown"></i> Beauty Battle
-                </a>
-            </div>
+            <a href="index.html" class="logo">
+                <i class="fas fa-crown"></i> Beauty Battle
+            </a>
         </nav>
     </header>
 
@@ -209,10 +208,15 @@
                 </h1>
                 <p>Заполните форму, чтобы предложить новую участницу для голосования</p>
             </div>
-            
-            <form id="submitForm" class="submit-form" enctype="multipart/form-data">
-                <?php echo CSRF::getTokenField(); ?>
-                
+
+            <form id="submitForm" class="submit-form">
+                <div class="form-group">
+                    <label for="name">Имя участницы</label>
+                    <input type="text" id="name" name="name" required 
+                           placeholder="Введите имя участницы"
+                           minlength="2" maxlength="50">
+                </div>
+
                 <div class="media-type-switch">
                     <button type="button" class="media-type-btn active" data-type="photo">
                         <i class="fas fa-image"></i> Фото
@@ -222,41 +226,34 @@
                     </button>
                 </div>
 
-                <div class="form-group">
-                    <label for="name">Имя участницы</label>
-                    <input type="text" id="name" name="name" required 
-                           placeholder="Введите имя участницы"
-                           minlength="2" maxlength="50">
-                </div>
-
-                <div class="form-group" id="photoUpload">
-                    <label>Фотография</label>
-                    <div class="media-preview" id="photoPreview">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Нажмите или перетащите фото</span>
+                <div id="mediaUpload" class="form-group">
+                    <div id="photoUpload" class="media-upload-container">
+                        <label>Фотография</label>
+                        <div class="media-preview" id="photoPreview">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Нажмите или перетащите фото</span>
+                        </div>
+                        <input type="file" id="photo" name="photo" 
+                               accept="image/*" class="hidden">
+                        <p class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Рекомендуемый размер: 800x1000 пикселей, до 5 МБ
+                        </p>
                     </div>
-                    <input type="file" id="photo" name="photo" 
-                           accept="image/*" required
-                           class="hidden">
-                    <p class="help-text">
-                        <i class="fas fa-info-circle"></i>
-                        Рекомендуемый размер: 800x1000 пикселей, до 5 МБ
-                    </p>
-                </div>
 
-                <div class="form-group hidden" id="videoUpload">
-                    <label>Видео</label>
-                    <div class="media-preview" id="videoPreview">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Нажмите или перетащите видео</span>
+                    <div id="videoUpload" class="media-upload-container hidden">
+                        <label>Видео</label>
+                        <div class="media-preview" id="videoPreview">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Нажмите или перетащите видео</span>
+                        </div>
+                        <input type="file" id="video" name="video" 
+                               accept="video/*" class="hidden">
+                        <p class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Максимальная длительность: 15 секунд, до 10 МБ
+                        </p>
                     </div>
-                    <input type="file" id="video" name="video" 
-                           accept="video/*" required
-                           class="hidden">
-                    <p class="help-text">
-                        <i class="fas fa-info-circle"></i>
-                        Максимальная длительность: 15 секунд, до 10 МБ
-                    </p>
                 </div>
 
                 <div class="form-group">
@@ -282,8 +279,7 @@
                     <button type="submit" class="submit-btn">
                         <i class="fas fa-paper-plane"></i> Отправить
                     </button>
-
-                    <a href="index.html" class="action-button secondary">
+                    <a href="index.html" class="back-btn">
                         <i class="fas fa-arrow-left"></i> Вернуться к голосованию
                     </a>
                 </div>
@@ -310,136 +306,6 @@
         </div>
     </footer>
 
-    <script>
-        // Переключение типа медиа
-        const mediaTypeBtns = document.querySelectorAll('.media-type-btn');
-        const photoUpload = document.getElementById('photoUpload');
-        const videoUpload = document.getElementById('videoUpload');
-
-        mediaTypeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                mediaTypeBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                if (btn.dataset.type === 'photo') {
-                    photoUpload.classList.remove('hidden');
-                    videoUpload.classList.add('hidden');
-                } else {
-                    photoUpload.classList.add('hidden');
-                    videoUpload.classList.remove('hidden');
-                }
-            });
-        });
-
-        // Загрузка фото
-        const photoPreview = document.getElementById('photoPreview');
-        const photoInput = document.getElementById('photo');
-
-        photoPreview.addEventListener('click', () => photoInput.click());
-
-        photoInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    photoPreview.style.backgroundImage = `url(${e.target.result})`;
-                    photoPreview.innerHTML = '';
-                    photoPreview.classList.add('has-media');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Загрузка видео
-        const videoPreview = document.getElementById('videoPreview');
-        const videoInput = document.getElementById('video');
-
-        videoPreview.addEventListener('click', () => videoInput.click());
-
-        videoInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const video = document.createElement('video');
-                video.src = URL.createObjectURL(file);
-                video.controls = true;
-                
-                video.onloadedmetadata = function() {
-                    if (video.duration > 15) {
-                        showNotification('Видео должно быть не длиннее 15 секунд', 'error');
-                        videoInput.value = '';
-                        return;
-                    }
-                    videoPreview.innerHTML = '';
-                    videoPreview.appendChild(video);
-                    videoPreview.classList.add('has-media');
-                };
-            }
-        });
-
-        // Отправка формы
-        document.getElementById('submitForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData();
-            
-            // Добавляем основные данные
-            formData.append('name', document.getElementById('name').value);
-            formData.append('social', document.getElementById('social').value);
-            
-            // Определяем тип медиа
-            const activeType = document.querySelector('.media-type-btn.active').dataset.type;
-            formData.append('type', activeType);
-            
-            // Добавляем файл
-            if (activeType === 'photo') {
-                const photoFile = document.getElementById('photo').files[0];
-                if (photoFile) {
-                    formData.append('media', photoFile);
-                }
-            } else {
-                const videoFile = document.getElementById('video').files[0];
-                if (videoFile) {
-                    formData.append('media', videoFile);
-                }
-            }
-            
-            try {
-                const response = await fetch('/api/submit.php', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include' // Важно для работы с сессиями
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showNotification('Заявка успешно отправлена! Ожидайте модерации.');
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 2000);
-                } else {
-                    throw new Error(result.error || 'Произошла ошибка при отправке формы');
-                }
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        });
-
-        // Показ уведомлений
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                ${message}
-            `;
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.style.animation = 'slideIn 0.3s ease-out reverse';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-    </script>
+    <script src="js/submit.js"></script>
 </body>
 </html> 
