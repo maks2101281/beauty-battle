@@ -37,7 +37,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 777 /var/www/html/public/uploads \
     && chmod -R 777 /var/www/html/cache \
     && chmod -R 777 /var/www/html/logs \
-    && chmod -R 777 /var/www/.postgresql
+    && chmod -R 777 /var/www/.postgresql \
+    && chmod +x /var/www/html/scripts/render_start.sh
 
 # Создание .env файла из переменных окружения
 RUN echo "DB_HOST=\${DB_HOST}\n\
@@ -58,20 +59,26 @@ CACHE_ENABLED=true\n\
 CACHE_LIFETIME=3600" > /var/www/html/.env
 
 # Установка зависимостей composer
+COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader
 
-# Настройка Apache
+# Копирование конфигурации Apache
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
+
+# Включение модулей Apache
 RUN a2enmod rewrite headers
 
 # Копирование SSL сертификата
 RUN cp /etc/ssl/certs/ca-certificates.crt /var/www/.postgresql/root.crt
 
-# Переменные окружения
+# Настройка Apache
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Порт
-EXPOSE \${PORT}
+# Порт по умолчанию
+ENV PORT=8080
+EXPOSE 8080
 
 # Запуск
-CMD ["/var/www/html/scripts/render_start.sh"] 
+CMD apache2-foreground 

@@ -2,9 +2,14 @@ services:
   - type: web
     name: beauty-battle
     env: docker
+    region: oregon
+    plan: free
+    healthCheckPath: /
     buildCommand: docker build -t beauty-battle .
-    startCommand: docker run -p $PORT:$PORT -e PORT=$PORT beauty-battle
+    startCommand: docker run --init -p 8080:8080 beauty-battle
     envVars:
+      - key: PORT
+        value: 8080
       - key: DB_HOST
         fromDatabase:
           name: facemash-battle-db
@@ -30,5 +35,6 @@ services:
 
 databases:
   - name: facemash-battle-db
+    region: oregon
     plan: free
     ipAllowList: [] 
