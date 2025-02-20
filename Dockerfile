@@ -20,8 +20,17 @@ RUN apt-get update && apt-get install -y \
 # Установка composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Копирование файлов проекта
-COPY . /var/www/html/
+# Создание рабочей директории
+WORKDIR /var/www/html
+
+# Копирование только composer.json
+COPY composer.json .
+
+# Установка зависимостей composer
+RUN composer install --no-dev --optimize-autoloader
+
+# Копирование остальных файлов проекта
+COPY . .
 
 # Создание необходимых директорий
 RUN mkdir -p /var/www/html/public/uploads/photos \
@@ -57,10 +66,6 @@ SESSION_LIFETIME=120\n\
 CSRF_TOKEN_LIFETIME=60\n\
 CACHE_ENABLED=true\n\
 CACHE_LIFETIME=3600" > /var/www/html/.env
-
-# Установка зависимостей composer
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader
 
 # Копирование конфигурации Apache
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
