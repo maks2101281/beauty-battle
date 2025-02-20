@@ -86,8 +86,12 @@ session.cookie_secure = On\n\
 session.cookie_httponly = On\n\
 session.use_strict_mode = On" > /usr/local/etc/php/conf.d/session.ini
 
+# Создание скрипта запуска
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 ENV PORT=8080
 EXPOSE 8080
 
-# Запуск инициализации и Apache
-CMD ["sh", "-c", "php scripts/init_render_db.php && apache2-foreground"] 
+# Запуск через entrypoint скрипт
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"] 
