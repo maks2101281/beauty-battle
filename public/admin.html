@@ -10,6 +10,172 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin.css">
+    <style>
+        /* Стили для турнирной сетки */
+        .tournament-bracket {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+
+        .bracket-container {
+            display: flex;
+            gap: 2rem;
+            min-width: 800px;
+        }
+
+        .bracket-round {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bracket-round-title {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .bracket-match {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .bracket-match::before {
+            content: '';
+            position: absolute;
+            right: -2rem;
+            top: 50%;
+            width: 2rem;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .bracket-round:last-child .bracket-match::before {
+            display: none;
+        }
+
+        .bracket-contestant {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .bracket-contestant.winner {
+            background: var(--primary);
+            color: white;
+        }
+
+        .bracket-contestant img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .bracket-votes {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        /* Стили для управления турниром */
+        .tournament-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .tournament-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-light);
+        }
+
+        .tournament-status.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tournament-status.completed {
+            background: var(--success);
+            color: white;
+        }
+
+        .match-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .match-action {
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .match-action:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tournament-settings {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .tournament-settings .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tournament-settings .form-input {
+            width: 80px;
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        @media (max-width: 768px) {
+            .tournament-bracket {
+                padding: 1rem;
+            }
+
+            .bracket-container {
+                min-width: 600px;
+            }
+
+            .tournament-controls {
+                flex-direction: column;
+            }
+
+            .tournament-settings {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -27,31 +193,70 @@
 
     <main>
         <div class="admin-container">
-            <!-- Переключатель категорий -->
+            <!-- Управление турниром -->
             <section class="admin-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-toggle-on"></i> Выбор категории</h2>
+                    <h2><i class="fas fa-trophy"></i> Управление турниром</h2>
                 </div>
-                <div class="category-switch">
-                    <button onclick="switchCategory('female')" class="action-button" id="femaleBtn">
-                        <i class="fas fa-venus"></i> Девушки
+                <div class="tournament-controls">
+                    <div class="tournament-status" id="tournamentStatus">
+                        <i class="fas fa-circle"></i>
+                        <span>Нет активного турнира</span>
+                    </div>
+                    <div class="tournament-settings">
+                        <div class="input-group">
+                            <label for="requiredVotes">Голосов для победы:</label>
+                            <input type="number" id="requiredVotes" min="5" value="20" class="form-input">
+                        </div>
+                    </div>
+                    <button onclick="createTournament()" class="action-button" id="createTournamentBtn">
+                        <i class="fas fa-plus"></i> Создать турнир
                     </button>
-                    <button onclick="switchCategory('male')" class="action-button" id="maleBtn">
-                        <i class="fas fa-mars"></i> Парни
+                    <button onclick="completeTournament()" class="action-button danger" id="completeTournamentBtn" style="display: none;">
+                        <i class="fas fa-stop"></i> Завершить турнир
                     </button>
+                </div>
+
+                <!-- Турнирная сетка -->
+                <div class="tournament-bracket">
+                    <div class="bracket-container" id="bracketContainer">
+                        <!-- 1/8 финала -->
+                        <div class="bracket-round">
+                            <div class="bracket-round-title">1/8 финала</div>
+                            <div id="round1Matches"></div>
+                        </div>
+
+                        <!-- 1/4 финала -->
+                        <div class="bracket-round">
+                            <div class="bracket-round-title">1/4 финала</div>
+                            <div id="round2Matches"></div>
+                        </div>
+
+                        <!-- Полуфинал -->
+                        <div class="bracket-round">
+                            <div class="bracket-round-title">Полуфинал</div>
+                            <div id="round3Matches"></div>
+                        </div>
+
+                        <!-- Финал -->
+                        <div class="bracket-round">
+                            <div class="bracket-round-title">Финал</div>
+                            <div id="round4Matches"></div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Статистика -->
             <section class="admin-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-chart-bar"></i> Статистика</h2>
+                    <h2><i class="fas fa-chart-bar"></i> Статистика турнира</h2>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon"><i class="fas fa-users"></i></div>
-                        <div class="stat-title">Всего участников</div>
-                        <div class="stat-value" id="totalContestants">0</div>
+                        <div class="stat-title">Всего участниц</div>
+                        <div class="stat-value" id="totalContestants">16</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon"><i class="fas fa-vote-yea"></i></div>
@@ -59,58 +264,22 @@
                         <div class="stat-value" id="totalVotes">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                        <div class="stat-title">Активных голосований</div>
-                        <div class="stat-value" id="activeVotes">0</div>
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-title">Активных матчей</div>
+                        <div class="stat-value" id="activeMatches">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="stat-title">Завершено раундов</div>
+                        <div class="stat-value" id="completedRounds">0</div>
                     </div>
                 </div>
             </section>
 
-            <!-- Форма добавления нового участника -->
+            <!-- Управление участницами -->
             <section class="admin-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-plus-circle"></i> Добавить участника</h2>
-                </div>
-                <form id="addContestantForm" class="admin-form">
-                    <div class="form-group">
-                        <label for="name">Имя участника:</label>
-                        <input type="text" id="name" name="name" required class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="gender">Пол:</label>
-                        <select id="gender" name="gender" required class="form-select">
-                            <option value="female">Девушка</option>
-                            <option value="male">Парень</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="photo">Фотография:</label>
-                        <div class="media-preview" id="photoPreview">
-                            <i class="fas fa-image"></i>
-                            <span>Нажмите или перетащите фото</span>
-                        </div>
-                        <input type="file" id="photo" name="photo" accept="image/*" required class="hidden">
-                    </div>
-                    <button type="submit" class="action-button">
-                        <i class="fas fa-plus"></i> Добавить
-                    </button>
-                </form>
-            </section>
-
-            <!-- Предложенные участники -->
-            <section class="admin-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-inbox"></i> Предложенные участники</h2>
-                </div>
-                <div class="submissions-grid" id="submissionsList">
-                    <!-- Здесь будет список предложенных участников -->
-                </div>
-            </section>
-
-            <!-- Управление участниками -->
-            <section class="admin-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-users"></i> Управление участниками</h2>
+                    <h2><i class="fas fa-users"></i> Управление участницами</h2>
                 </div>
                 <div class="list-actions">
                     <button onclick="deleteAllContestants()" class="action-button danger">
@@ -124,54 +293,18 @@
                     </button>
                 </div>
                 <div class="contestants-grid" id="contestantsList">
-                    <!-- Здесь будет список участников -->
+                    <!-- Здесь будет список участниц -->
                 </div>
             </section>
 
-            <!-- Управление раундами -->
+            <!-- Предложенные участницы -->
             <section class="admin-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-trophy"></i> Управление раундами</h2>
+                    <h2><i class="fas fa-inbox"></i> Предложенные участницы</h2>
                 </div>
-                <div class="rounds-control">
-                    <div class="round-info">
-                        <span>Текущий раунд: <strong id="currentRound">0</strong>/10</span>
-                    </div>
-                    <div class="round-actions">
-                        <button onclick="resetRounds()" class="action-button danger">
-                            <i class="fas fa-redo"></i> Сбросить раунды
-                        </button>
-                        <button onclick="startNewRound()" class="action-button success">
-                            <i class="fas fa-play"></i> Начать новый раунд
-                        </button>
-                    </div>
+                <div class="submissions-grid" id="submissionsList">
+                    <!-- Здесь будет список предложенных участниц -->
                 </div>
-            </section>
-
-            <!-- Настройки голосования -->
-            <section class="admin-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-cog"></i> Настройки голосования</h2>
-                </div>
-                <form id="votingSettingsForm" class="admin-form">
-                    <div class="form-group">
-                        <label for="requiredVotes">Необходимое количество голосов:</label>
-                        <input type="number" id="requiredVotes" name="requiredVotes" 
-                               min="1" value="50" required class="form-input">
-                        <p class="help-text">Количество голосов для прохождения в следующий этап</p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="finalVotingTime">Длительность финала (часов):</label>
-                        <input type="number" id="finalVotingTime" name="finalVotingTime" 
-                               min="1" value="24" required class="form-input">
-                        <p class="help-text">Время на финальное голосование</p>
-                    </div>
-
-                    <button type="submit" class="action-button">
-                        <i class="fas fa-save"></i> Сохранить настройки
-                    </button>
-                </form>
             </section>
         </div>
     </main>

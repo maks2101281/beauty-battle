@@ -9,6 +9,221 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h1 {
+            font-size: 1.8rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .auth-header p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 0;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--text-light);
+            transition: var(--transition);
+        }
+
+        .step.active .step-icon {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .step.completed .step-icon {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            padding-left: 2.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 2.4rem;
+            color: var(--text-light);
+        }
+
+        .code-inputs {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .code-inputs input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            color: var(--text);
+            transition: var(--transition);
+        }
+
+        .code-inputs input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .timer {
+            text-align: center;
+            color: var(--text-light);
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .timer span {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .auth-footer {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .telegram-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .telegram-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--primary);
+        }
+
+        .telegram-link i {
+            color: #0088cc;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 640px) {
+            .auth-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .code-inputs {
+                gap: 0.25rem;
+            }
+
+            .code-inputs input {
+                width: 40px;
+                height: 40px;
+                font-size: 1.25rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -23,77 +238,82 @@
 
     <main>
         <div class="auth-container">
-            <div class="auth-card">
-                <h1><i class="fas fa-user-lock"></i> Авторизация</h1>
-                
-                <!-- Шаг 1: Ввод Telegram -->
-                <div class="auth-step" id="telegramStep">
-                    <div class="step-indicator">
-                        <div class="step active">
+            <div class="auth-header">
+                <h1>
+                    <i class="fas fa-user-lock"></i>
+                    Авторизация
+                </h1>
+                <p>Войдите через Telegram для участия в голосовании</p>
+            </div>
+
+            <!-- Шаг 1: Ввод Telegram -->
+            <div class="auth-step" id="telegramStep">
+                <div class="step-indicator">
+                    <div class="step active">
+                        <div class="step-icon">
                             <i class="fab fa-telegram"></i>
-                            <span>Telegram</span>
                         </div>
-                        <div class="step">
-                            <i class="fas fa-key"></i>
-                            <span>Код</span>
-                        </div>
+                        <span class="step-label">Telegram</span>
                     </div>
-
-                    <form id="telegramForm" class="auth-form">
-                        <div class="form-group">
-                            <label for="telegram">Ваш Telegram:</label>
-                            <div class="input-group">
-                                <span class="input-prefix">@</span>
-                                <input type="text" id="telegram" name="telegram" 
-                                       placeholder="username"
-                                       required>
-                            </div>
-                            <p class="help-text">
-                                Код подтверждения будет отправлен в Telegram
-                            </p>
-                            <a href="https://t.me/AUTH_CE_BOT" target="_blank" class="telegram-link">
-                                <i class="fab fa-telegram"></i> Подписаться на бота
-                            </a>
+                    <div class="step">
+                        <div class="step-icon">
+                            <i class="fas fa-key"></i>
                         </div>
-
-                        <button type="submit" class="action-button">
-                            <i class="fas fa-arrow-right"></i> Получить код
-                        </button>
-                    </form>
+                        <span class="step-label">Код</span>
+                    </div>
                 </div>
 
-                <!-- Шаг 2: Ввод кода -->
-                <div class="auth-step hidden" id="codeStep">
-                    <div class="step-indicator">
-                        <div class="step completed">
-                            <i class="fas fa-check"></i>
-                            <span>Telegram</span>
-                        </div>
-                        <div class="step active">
-                            <i class="fas fa-key"></i>
-                            <span>Код</span>
-                        </div>
+                <form id="telegramForm">
+                    <div class="input-group">
+                        <label for="telegram">Ваш Telegram</label>
+                        <i class="fab fa-telegram"></i>
+                        <input type="text" id="telegram" name="telegram" 
+                               placeholder="@username" required>
                     </div>
 
-                    <form id="codeForm" class="auth-form">
-                        <div class="form-group">
-                            <label>Введите код из Telegram:</label>
-                            <div class="code-inputs">
-                                <input type="text" maxlength="1" pattern="[0-9]" required>
-                                <input type="text" maxlength="1" pattern="[0-9]" required>
-                                <input type="text" maxlength="1" pattern="[0-9]" required>
-                                <input type="text" maxlength="1" pattern="[0-9]" required>
-                            </div>
-                            <p class="help-text">
-                                Код отправлен в Telegram: <span id="confirmedTelegram" class="highlight"></span>
-                            </p>
-                        </div>
+                    <button type="submit" class="action-button">
+                        <i class="fas fa-arrow-right"></i> Получить код
+                    </button>
 
-                        <div class="code-timer">
-                            <span id="timerText">Запросить новый код через: </span>
-                            <span id="timer" class="highlight">60</span> сек
-                        </div>
+                    <a href="https://t.me/AUTH_CE_BOT" target="_blank" class="telegram-link">
+                        <i class="fab fa-telegram"></i>
+                        Подписаться на бота
+                    </a>
+                </form>
+            </div>
 
+            <!-- Шаг 2: Ввод кода -->
+            <div class="auth-step hidden" id="codeStep">
+                <div class="step-indicator">
+                    <div class="step completed">
+                        <div class="step-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <span class="step-label">Telegram</span>
+                    </div>
+                    <div class="step active">
+                        <div class="step-icon">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <span class="step-label">Код</span>
+                    </div>
+                </div>
+
+                <form id="codeForm">
+                    <div class="input-group">
+                        <label>Введите код из Telegram</label>
+                        <div class="code-inputs">
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                            <input type="text" maxlength="1" pattern="[0-9]" required>
+                        </div>
+                        <p class="timer">
+                            Запросить новый код через: <span id="timer">60</span> сек
+                        </p>
+                    </div>
+
+                    <div class="auth-footer">
                         <button type="submit" class="action-button">
                             <i class="fas fa-check"></i> Подтвердить
                         </button>
@@ -101,8 +321,8 @@
                         <button type="button" id="backButton" class="action-button secondary">
                             <i class="fas fa-arrow-left"></i> Изменить Telegram
                         </button>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </main>

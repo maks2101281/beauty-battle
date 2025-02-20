@@ -4,21 +4,21 @@
     --secondary-gradient: linear-gradient(135deg, #64748b 0%, #475569 100%);
     --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     
-    --primary: #4f46e5;
-    --primary-dark: #4338ca;
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
     --secondary: #64748b;
     --accent: #f59e0b;
     --success: #22c55e;
     --danger: #ef4444;
     
-    --background: #f8fafc;
-    --card-bg: rgba(255, 255, 255, 0.9);
-    --text: #1e293b;
-    --text-light: #64748b;
+    --background: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f8fafc;
+    --text-light: #94a3b8;
     
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
     
     --radius-sm: 0.375rem;
     --radius: 0.5rem;
@@ -39,13 +39,16 @@ body {
     background-color: var(--background);
     color: var(--text);
     line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Современный хедер */
 header {
-    background: var(--card-bg);
+    background: rgba(30, 41, 59, 0.8);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -58,17 +61,30 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0 1rem;
 }
 
 .logo {
     font-size: 1.5rem;
     font-weight: 700;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--primary);
+    text-decoration: none;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.logo i {
+    color: var(--accent);
+}
+
+/* Основной контент */
+main {
+    flex: 1;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    width: 100%;
 }
 
 /* Карточки участников */
@@ -76,9 +92,8 @@ nav {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     gap: 2rem;
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+    align-items: center;
+    margin-bottom: 2rem;
 }
 
 .battle-card {
@@ -87,12 +102,13 @@ nav {
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: var(--transition);
-    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .battle-card:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
 }
 
 .battle-card img {
@@ -102,17 +118,20 @@ nav {
     transition: var(--transition);
 }
 
-.battle-card:hover img {
-    transform: scale(1.05);
-}
-
 .card-content {
     padding: 1.5rem;
 }
 
+.contestant-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text);
+}
+
 /* Кнопка голосования */
 .vote-button {
-    background: var(--primary-gradient);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     border: none;
     padding: 1rem 2rem;
@@ -125,27 +144,23 @@ nav {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .vote-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
 }
 
-.vote-button.voted {
-    background: var(--success);
-}
-
-.vote-button.disabled {
-    background: var(--secondary);
-    cursor: not-allowed;
+.vote-button i {
+    color: #fff;
 }
 
 /* VS значок */
 .vs-badge {
     width: 60px;
     height: 60px;
-    background: var(--primary-gradient);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -154,17 +169,16 @@ nav {
     font-weight: 700;
     font-size: 1.2rem;
     box-shadow: var(--shadow);
-    align-self: center;
     animation: pulse 2s infinite;
 }
 
-/* Рейтинг и статистика */
+/* Рейтинг */
 .rating {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     color: var(--text-light);
-    margin: 1rem 0;
+    margin-bottom: 1rem;
 }
 
 .rating i {
@@ -172,36 +186,86 @@ nav {
 }
 
 /* Комментарии */
-.comments-section {
-    background: var(--card-bg);
+.comments-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    border: none;
+    padding: 0.75rem 1rem;
     border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-top: 1rem;
-    display: none;
-}
-
-.comments-section.active {
-    display: block;
-    animation: slideDown 0.3s ease-out;
-}
-
-.comment {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 1rem 0;
-}
-
-.comment:last-child {
-    border-bottom: none;
-}
-
-.comment-form textarea {
+    cursor: pointer;
     width: 100%;
-    padding: 1rem;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: var(--radius);
-    resize: vertical;
-    min-height: 100px;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.comments-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Статистика */
+.stats {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-light);
+}
+
+.stat-value {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Футер */
+footer {
+    background: var(--card-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 3rem 1rem;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.footer-section h3 {
+    color: var(--text);
     margin-bottom: 1rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-link {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.social-link:hover {
+    background: var(--primary);
+    transform: translateY(-3px);
 }
 
 /* Анимации */
@@ -211,17 +275,7 @@ nav {
     100% { transform: scale(1); }
 }
 
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Адаптивный дизайн */
+/* Адаптивная верстка */
 @media (max-width: 768px) {
     .battle-container {
         grid-template-columns: 1fr;
@@ -234,6 +288,53 @@ nav {
     .battle-card img {
         height: 300px;
     }
+    
+    .stats {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Дополнительные улучшения */
+.action-button {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.round-info {
+    text-align: center;
+    margin-top: 2rem;
+    color: var(--text-light);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+    transition: width 0.3s ease;
 }
 
 /* Тёмная тема */

@@ -1,73 +1,68 @@
 # Beauty Battle
 
-Платформа для проведения голосований с авторизацией через Telegram.
+Платформа для проведения турниров красоты с системой голосования и администрированием.
 
-## Требования
+## Особенности
 
-- PHP 7.4 или выше
-- PostgreSQL
-- Composer
-- Telegram Bot Token
+- Турнирная система с автоматическим продвижением участников
+- Система голосования с настраиваемым порогом для победы
+- Адаптивный дизайн для всех устройств
+- Админ-панель для управления турнирами и участниками
+- Возможность предложить новых участников
+- Автоматическое обновление статистики
+- Уведомления о действиях пользователей
 
-## Установка
+## Технологии
+
+- Frontend: HTML5, CSS3, JavaScript
+- Backend: PHP, MySQL
+- Деплой: Render
+- CI/CD: GitHub Actions
+
+## Установка и запуск
 
 1. Клонируйте репозиторий:
 ```bash
-git clone <repository-url>
-cd beautybattle
+git clone https://github.com/yourusername/beauty-battle.git
+cd beauty-battle
 ```
 
-2. Установите зависимости:
+2. Настройте базу данных:
+- Создайте новую базу данных MySQL
+- Импортируйте структуру из `database/schema.sql`
+- Скопируйте `config.example.php` в `config.php` и настройте параметры подключения
+
+3. Настройте веб-сервер:
+- Укажите корневую директорию на папку `public`
+- Убедитесь, что PHP имеет права на запись в папку `uploads`
+
+4. Запустите локальный сервер:
 ```bash
-composer install
+php -S localhost:8000 -t public
 ```
 
-3. Создайте файл `.env` и настройте переменные окружения:
-```env
-DB_HOST=your_host
-DB_NAME=your_database
-DB_USER=your_user
-DB_PASSWORD=your_password
+## Развертывание
 
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_BOT_USERNAME=your_bot_username
+Проект настроен на автоматическое развертывание при пуше в ветку main/master через GitHub Actions и Render.
 
-APP_URL=your_app_url
-APP_ENV=production
-APP_DEBUG=false
-```
-
-4. Создайте необходимые директории:
-```bash
-mkdir -p uploads/photos uploads/thumbnails cache logs
-chmod -R 755 uploads cache logs
-```
-
-5. Импортируйте структуру базы данных:
-```bash
-psql -U your_user -d your_database -f api/database/schema_pg.sql
-```
-
-6. Настройте вебхук для Telegram бота:
-```bash
-php api/bot/set-webhook-render.php
-```
-
-## Развертывание на Render
-
-1. Подключите репозиторий в панели Render
+1. Создайте аккаунт на [Render](https://render.com)
 2. Создайте новый Web Service
-3. Настройте переменные окружения
-4. Запустите деплой
+3. Подключите ваш GitHub репозиторий
+4. Добавьте Deploy Hook URL в секреты GitHub (RENDER_DEPLOY_HOOK_URL)
 
 ## Структура проекта
 
-- `api/` - API endpoints и классы
-- `config/` - Конфигурационные файлы
-- `public/` - Публичные файлы (CSS, JS, изображения)
-- `uploads/` - Загруженные файлы
-- `cache/` - Кэш файлы
-- `logs/` - Логи (в режиме отладки)
+```
+├── public/          # Публичные файлы
+│   ├── css/        # Стили
+│   ├── js/         # JavaScript файлы
+│   ├── images/     # Изображения
+│   └── uploads/    # Загруженные фото
+├── src/            # PHP классы
+├── database/       # SQL файлы
+├── config/         # Конфигурация
+└── .github/        # GitHub Actions
+```
 
 ## Лицензия
 
