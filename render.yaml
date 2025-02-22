@@ -53,9 +53,9 @@ services:
     healthCheck:
       httpPath: /health.php
       port: 8080
-      initialDelaySeconds: 30
+      initialDelaySeconds: 60
       periodSeconds: 15
-      timeoutSeconds: 5
+      timeoutSeconds: 10
       successThreshold: 1
       failureThreshold: 3
     autoDeploy: true

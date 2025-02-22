@@ -6,6 +6,19 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# Функция проверки и создания директории
+ensure_directory() {
+    local dir="$1"
+    if [ ! -d "$dir" ]; then
+        log "Creating directory: $dir"
+        mkdir -p "$dir"
+        log "Directory $dir created"
+    fi
+    chown -R www-data:www-data "$dir"
+    chmod -R 777 "$dir"
+    log "Permissions set for $dir"
+}
+
 log "Starting Beauty Battle initialization..."
 
 # Проверка переменных окружения
@@ -39,14 +52,7 @@ directories=(
 )
 
 for dir in "${directories[@]}"; do
-    if [ ! -d "$dir" ]; then
-        log "Creating directory: $dir"
-        mkdir -p "$dir"
-        log "Directory $dir created"
-    fi
-    chown -R www-data:www-data "$dir"
-    chmod -R 777 "$dir"
-    log "Permissions set for $dir"
+    ensure_directory "$dir"
 done
 log "Directories setup completed"
 
@@ -55,10 +61,7 @@ log "Checking SSL certificates..."
 cert_dir="/var/www/.postgresql"
 cert_file="${cert_dir}/root.crt"
 
-if [ ! -d "$cert_dir" ]; then
-    log "Creating PostgreSQL certificate directory"
-    mkdir -p "$cert_dir"
-fi
+ensure_directory "$cert_dir"
 
 if [ -f "/etc/ssl/certs/ca-certificates.crt" ]; then
     log "Copying SSL certificate"
@@ -132,11 +135,22 @@ log "File permissions set"
 
 # Инициализация базы данных
 log "Initializing database..."
-if php scripts/init_render_db.php; then
-    log "Database initialization completed"
-else
-    log "Warning: Database initialization failed"
-fi
+max_tries=5
+tries=0
+while [ $tries -lt $max_tries ]; do
+    if php scripts/init_render_db.php; then
+        log "Database initialization completed"
+        break
+    else
+        tries=$((tries + 1))
+        log "Database initialization attempt $tries of $max_tries failed"
+        if [ $tries -eq $max_tries ]; then
+            log "Warning: Database initialization failed after $max_tries attempts"
+            break
+        fi
+        sleep 5
+    fi
+done
 
 # Очистка кэша
 log "Clearing cache..."
@@ -145,11 +159,22 @@ log "Cache cleared"
 
 # Проверка здоровья приложения
 log "Running health check..."
-if curl -f "http://localhost:8080/health.php" || curl -f "http://127.0.0.1:8080/health.php"; then
-    log "Health check passed"
-else
-    log "Warning: Health check failed, but continuing"
-fi
+max_tries=5
+tries=0
+while [ $tries -lt $max_tries ]; do
+    if curl -f "http://localhost:8080/health.php" || curl -f "http://127.0.0.1:8080/health.php"; then
+        log "Health check passed"
+        break
+    else
+        tries=$((tries + 1))
+        log "Health check attempt $tries of $max_tries failed"
+        if [ $tries -eq $max_tries ]; then
+            log "Warning: Health check failed after $max_tries attempts"
+            break
+        fi
+        sleep 5
+    fi
+done
 
 log "Initialization completed successfully"
 
