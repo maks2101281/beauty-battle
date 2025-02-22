@@ -2,6 +2,13 @@
 require_once __DIR__ . '/../config/env.php';
 
 class ImageProcessor {
+    private const MAX_WIDTH = 1920;
+    private const MAX_HEIGHT = 1080;
+    private const THUMB_WIDTH = 300;
+    private const THUMB_HEIGHT = 300;
+    private const QUALITY = 85;
+    private const MAX_FILE_SIZE = 5242880; // 5MB
+
     private $maxFileSize;
     private $allowedTypes;
     private $maxWidth;
@@ -19,154 +26,172 @@ class ImageProcessor {
         set_time_limit(Env::get('SCRIPT_TIMEOUT', 30));
     }
     
+    /**
+     * Проверяет изображение на соответствие требованиям
+     */
     public function validateImage($file) {
-        if ($file['size'] > $this->maxFileSize) {
-            throw new Exception('Файл слишком большой. Максимальный размер: ' . 
-                              round($this->maxFileSize / 1024 / 1024, 1) . 'MB');
+        // Проверка размера файла
+        if ($file['size'] > self::MAX_FILE_SIZE) {
+            throw new Exception('Размер файла превышает допустимый (5MB)');
         }
-        
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
-        
-        if (!in_array($mimeType, $this->allowedTypes)) {
-            throw new Exception('Недопустимый тип файла. Разрешены только: JPEG, PNG, WebP');
+
+        // Проверка формата
+        $image = @imagecreatefromstring(file_get_contents($file['tmp_name']));
+        if (!$image) {
+            throw new Exception('Некорректный формат изображения');
         }
+
+        // Проверка размеров
+        $width = imagesx($image);
+        $height = imagesy($image);
         
-        // Проверяем размеры изображения
-        list($width, $height) = getimagesize($file['tmp_name']);
-        if ($width > 2000 || $height > 2000) {
-            throw new Exception('Слишком большие размеры изображения. Максимум: 2000x2000 пикселей');
+        if ($width < 100 || $height < 100) {
+            throw new Exception('Изображение слишком маленькое (минимум 100x100)');
         }
-        
-        return true;
+
+        imagedestroy($image);
     }
     
-    public function processImage($source, $destination) {
-        // Проверяем доступность памяти
-        $imageInfo = getimagesize($source);
-        $memoryNeeded = $imageInfo[0] * $imageInfo[1] * 4 * 1.7; // Примерный расчет необходимой памяти
-        
-        if (memory_get_usage() + $memoryNeeded > memory_get_limit()) {
-            throw new Exception('Недостаточно памяти для обработки изображения');
+    /**
+     * Обрабатывает и оптимизирует изображение
+     */
+    public function processImage($sourcePath, $destinationPath) {
+        // Загружаем изображение
+        $image = imagecreatefromstring(file_get_contents($sourcePath));
+        if (!$image) {
+            throw new Exception('Ошибка при обработке изображения');
         }
-        
-        try {
-            list($width, $height, $type) = $imageInfo;
-            
-            // Вычисляем новые размеры с сохранением пропорций
-            $ratio = min($this->maxWidth / $width, $this->maxHeight / $height);
+
+        // Получаем размеры
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        // Вычисляем новые размеры с сохранением пропорций
+        if ($width > self::MAX_WIDTH || $height > self::MAX_HEIGHT) {
+            $ratio = min(self::MAX_WIDTH / $width, self::MAX_HEIGHT / $height);
             $newWidth = round($width * $ratio);
             $newHeight = round($height * $ratio);
-            
+
             // Создаем новое изображение
             $newImage = imagecreatetruecolor($newWidth, $newHeight);
             
-            // Загружаем исходное изображение
-            switch ($type) {
-                case IMAGETYPE_JPEG:
-                    $source = imagecreatefromjpeg($source);
-                    break;
-                case IMAGETYPE_PNG:
-                    $source = imagecreatefrompng($source);
-                    imagealphablending($newImage, false);
-                    imagesavealpha($newImage, true);
-                    break;
-                case IMAGETYPE_WEBP:
-                    $source = imagecreatefromwebp($source);
-                    break;
-                default:
-                    throw new Exception('Неподдерживаемый формат изображения');
-            }
+            // Включаем сглаживание
+            imageantialias($newImage, true);
             
-            // Изменяем размер
+            // Копируем и ресайзим изображение
             imagecopyresampled(
-                $newImage, $source,
+                $newImage, $image,
                 0, 0, 0, 0,
                 $newWidth, $newHeight,
                 $width, $height
             );
             
-            // Создаем директорию, если не существует
-            $dir = dirname($destination);
-            if (!file_exists($dir)) {
-                mkdir($dir, 0755, true);
-            }
-            
-            // Сохраняем оптимизированное изображение
-            switch ($type) {
-                case IMAGETYPE_JPEG:
-                    imagejpeg($newImage, $destination, $this->quality);
-                    break;
-                case IMAGETYPE_PNG:
-                    imagepng($newImage, $destination, round(9 * $this->quality / 100));
-                    break;
-                case IMAGETYPE_WEBP:
-                    imagewebp($newImage, $destination, $this->quality);
-                    break;
-            }
-            
             // Освобождаем память
-            imagedestroy($source);
-            imagedestroy($newImage);
-            
-            return true;
-            
-        } catch (Exception $e) {
-            // Освобождаем память в случае ошибки
-            if (isset($source) && is_resource($source)) {
-                imagedestroy($source);
-            }
-            if (isset($newImage) && is_resource($newImage)) {
-                imagedestroy($newImage);
-            }
-            throw $e;
+            imagedestroy($image);
+            $image = $newImage;
         }
+
+        // Определяем формат для сохранения
+        $extension = pathinfo($destinationPath, PATHINFO_EXTENSION);
+        
+        // Сохраняем оптимизированное изображение
+        switch (strtolower($extension)) {
+            case 'jpg':
+            case 'jpeg':
+                imagejpeg($image, $destinationPath, self::QUALITY);
+                break;
+            case 'png':
+                // Устанавливаем уровень сжатия PNG (0-9)
+                imagesavealpha($image, true);
+                imagepng($image, $destinationPath, 6);
+                break;
+            case 'webp':
+                imagewebp($image, $destinationPath, self::QUALITY);
+                break;
+            default:
+                throw new Exception('Неподдерживаемый формат изображения');
+        }
+
+        // Освобождаем память
+        imagedestroy($image);
+
+        // Устанавливаем права на файл
+        chmod($destinationPath, 0644);
     }
     
-    public function generateThumbnail($source, $destination, $thumbWidth = 150, $thumbHeight = 150) {
-        try {
-            list($width, $height) = getimagesize($source);
-            
-            // Вычисляем размеры для обрезки
-            $ratio = max($thumbWidth / $width, $thumbHeight / $height);
-            $newWidth = round($width * $ratio);
-            $newHeight = round($height * $ratio);
-            
-            $thumbnail = imagecreatetruecolor($thumbWidth, $thumbHeight);
-            $source = imagecreatefromjpeg($source);
-            
-            // Изменяем размер и обрезаем
-            imagecopyresampled(
-                $thumbnail, $source,
-                0, 0,
-                ($newWidth - $thumbWidth) / 2, ($newHeight - $thumbHeight) / 2,
-                $thumbWidth, $thumbHeight,
-                $width, $height
-            );
-            
-            // Создаем директорию, если не существует
-            $dir = dirname($destination);
-            if (!file_exists($dir)) {
-                mkdir($dir, 0755, true);
-            }
-            
-            // Сохраняем миниатюру
-            imagejpeg($thumbnail, $destination, $this->quality);
-            
-            imagedestroy($source);
-            imagedestroy($thumbnail);
-            
-            return true;
-            
-        } catch (Exception $e) {
-            if (isset($source) && is_resource($source)) {
-                imagedestroy($source);
-            }
-            if (isset($thumbnail) && is_resource($thumbnail)) {
-                imagedestroy($thumbnail);
-            }
-            throw $e;
+    /**
+     * Создает миниатюру изображения
+     */
+    public function generateThumbnail($sourcePath, $destinationPath) {
+        // Загружаем изображение
+        $image = imagecreatefromstring(file_get_contents($sourcePath));
+        if (!$image) {
+            throw new Exception('Ошибка при создании миниатюры');
         }
+
+        // Получаем размеры
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        // Вычисляем размеры для обрезки
+        $ratio = max(self::THUMB_WIDTH / $width, self::THUMB_HEIGHT / $height);
+        $newWidth = round($width * $ratio);
+        $newHeight = round($height * $ratio);
+
+        // Создаем временное изображение
+        $tempImage = imagecreatetruecolor($newWidth, $newHeight);
+        
+        // Включаем сглаживание
+        imageantialias($tempImage, true);
+        
+        // Ресайзим
+        imagecopyresampled(
+            $tempImage, $image,
+            0, 0, 0, 0,
+            $newWidth, $newHeight,
+            $width, $height
+        );
+        
+        // Освобождаем память
+        imagedestroy($image);
+
+        // Вычисляем координаты для обрезки
+        $x = ($newWidth - self::THUMB_WIDTH) / 2;
+        $y = ($newHeight - self::THUMB_HEIGHT) / 2;
+
+        // Создаем финальную миниатюру
+        $thumbnail = imagecreatetruecolor(self::THUMB_WIDTH, self::THUMB_HEIGHT);
+        
+        // Копируем и обрезаем изображение
+        imagecopy(
+            $thumbnail, $tempImage,
+            0, 0, $x, $y,
+            self::THUMB_WIDTH, self::THUMB_HEIGHT
+        );
+        
+        // Освобождаем память
+        imagedestroy($tempImage);
+
+        // Сохраняем миниатюру
+        $extension = pathinfo($destinationPath, PATHINFO_EXTENSION);
+        switch (strtolower($extension)) {
+            case 'jpg':
+            case 'jpeg':
+                imagejpeg($thumbnail, $destinationPath, self::QUALITY);
+                break;
+            case 'png':
+                imagesavealpha($thumbnail, true);
+                imagepng($thumbnail, $destinationPath, 6);
+                break;
+            case 'webp':
+                imagewebp($thumbnail, $destinationPath, self::QUALITY);
+                break;
+        }
+
+        // Освобождаем память
+        imagedestroy($thumbnail);
+
+        // Устанавливаем права на файл
+        chmod($destinationPath, 0644);
     }
 } 

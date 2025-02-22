@@ -1,8 +1,30 @@
 <?php
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
 require_once __DIR__ . '/../config/database_render.php';
 
+// Функция логирования
+function logError($message, $context = []) {
+    $logFile = __DIR__ . '/../logs/error.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $contextStr = !empty($context) ? json_encode($context) : '';
+    $logMessage = "[{$timestamp}] ERROR: {$message} {$contextStr}\n";
+    error_log($logMessage, 3, $logFile);
+}
+
 try {
+    // Проверяем метод OPTIONS для CORS
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit;
+    }
+
+    // Проверяем подключение к базе данных
+    $pdo->query("SELECT 1");
+
     // Проверяем существование необходимых таблиц
     $required_tables = ['rounds', 'matches', 'contestants', 'votes'];
     foreach ($required_tables as $table) {
@@ -67,6 +89,14 @@ try {
 
             // Если нет активных матчей, создаем новые
             if (empty($matches)) {
+                // Проверяем наличие участниц
+                $stmt = $pdo->query("SELECT COUNT(*) FROM contestants");
+                $contestantCount = $stmt->fetchColumn();
+
+                if ($contestantCount < 2) {
+                    throw new Exception('Недостаточно участниц для создания матча');
+                }
+
                 $stmt = $pdo->query("
                     SELECT id FROM contestants 
                     WHERE id NOT IN (
@@ -221,8 +251,21 @@ try {
         default:
             throw new Exception('Метод не поддерживается');
     }
+} catch (PDOException $e) {
+    logError('Database error', [
+        'message' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ]);
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Ошибка базы данных'
+    ]);
 } catch (Exception $e) {
-    error_log("Voting API error: " . $e->getMessage());
+    logError('Application error', [
+        'message' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ]);
     http_response_code(400);
     echo json_encode([
         'success' => false,

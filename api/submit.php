@@ -12,10 +12,10 @@ error_log('Request Headers: ' . print_r(getallheaders(), true));
 
 // Базовые заголовки для всех ответов
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: ' . (isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*'));
+header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type');
 
 // Обработка preflight запросов
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -23,8 +23,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/database_render.php';
 require_once __DIR__ . '/../classes/ImageProcessor.php';
+require_once __DIR__ . '/../classes/Logger.php';
+
+// Функция для создания директории с правами
+function createDirectory($path) {
+    if (!file_exists($path)) {
+        if (!mkdir($path, 0755, true)) {
+            throw new Exception("Не удалось создать директорию: {$path}");
+        }
+        chmod($path, 0755);
+    }
+}
 
 try {
     // Логируем полученные данные
@@ -46,24 +57,30 @@ try {
     $name = $_POST['name'] ?? '';
     $social = $_POST['social'] ?? '';
 
+    // Проверяем имя
+    if (empty($name) || strlen($name) > 100) {
+        throw new Exception('Некорректное имя участницы');
+    }
+
+    // Проверяем социальную ссылку
+    if (!empty($social) && !filter_var($social, FILTER_VALIDATE_URL)) {
+        throw new Exception('Некорректная ссылка на соцсеть');
+    }
+
     // Проверяем тип файла
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
 
-    // Создаем директории если не существуют
+    // Создаем необходимые директории
     $uploadDir = __DIR__ . '/../public/uploads/';
     $photoDir = $uploadDir . 'photos/';
     $videoDir = $uploadDir . 'videos/';
     $thumbDir = $uploadDir . 'thumbnails/';
 
-    foreach ([$photoDir, $videoDir, $thumbDir] as $dir) {
-        if (!file_exists($dir)) {
-            if (!mkdir($dir, 0777, true)) {
-                throw new Exception('Не удалось создать директорию: ' . $dir);
-            }
-        }
-    }
+    createDirectory($photoDir);
+    createDirectory($videoDir);
+    createDirectory($thumbDir);
 
     // Генерируем уникальное имя файла
     $filename = uniqid() . '_' . time();
@@ -84,18 +101,25 @@ try {
 
         $finalFilename = $filename . '.' . $extension;
         
-        // Просто копируем файл для тестирования
-        if (!copy($file['tmp_name'], $photoDir . $finalFilename)) {
-            throw new Exception('Ошибка при сохранении изображения');
-        }
+        // Обрабатываем изображение
+        $imageProcessor = new ImageProcessor();
         
-        // Копируем тот же файл для миниатюры (в реальном приложении здесь будет создание миниатюры)
-        if (!copy($file['tmp_name'], $thumbDir . $finalFilename)) {
-            throw new Exception('Ошибка при создании миниатюры');
-        }
+        // Проверяем и оптимизируем изображение
+        $imageProcessor->validateImage($file);
+        $imageProcessor->processImage(
+            $file['tmp_name'],
+            $photoDir . $finalFilename
+        );
+        
+        // Создаем миниатюру
+        $imageProcessor->generateThumbnail(
+            $photoDir . $finalFilename,
+            $thumbDir . $finalFilename
+        );
 
         $mediaPath = 'uploads/photos/' . $finalFilename;
         $thumbPath = 'uploads/thumbnails/' . $finalFilename;
+
     } else {
         // Проверяем, что это видео
         if (!in_array($mimeType, ['video/mp4', 'video/webm'])) {
@@ -123,10 +147,11 @@ try {
     $stmt = $pdo->prepare("
         INSERT INTO submissions (
             name, media_type, media_path, thumbnail_path,
-            social_link, user_id, status
+            social_link, user_id, status, created_at
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, 'pending'
+            ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
         )
+        RETURNING id
     ");
 
     if (!$stmt->execute([
@@ -140,13 +165,31 @@ try {
         throw new Exception('Ошибка при сохранении в базу данных');
     }
 
+    $submissionId = $stmt->fetchColumn();
+
+    // Логируем успешную загрузку
+    Logger::info('Успешная загрузка файла', [
+        'submission_id' => $submissionId,
+        'type' => $type,
+        'filename' => $finalFilename
+    ]);
+
     echo json_encode([
         'success' => true,
         'message' => 'Файл успешно загружен',
-        'media' => $mediaPath
+        'submission' => [
+            'id' => $submissionId,
+            'media' => $mediaPath,
+            'thumbnail' => $thumbPath
+        ]
     ]);
 
 } catch (Exception $e) {
+    Logger::error('Ошибка при загрузке файла', [
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ]);
+    
     error_log('Submit Error: ' . $e->getMessage());
     error_log('Debug backtrace: ' . print_r(debug_backtrace(), true));
     http_response_code(400);
