@@ -130,18 +130,18 @@ CREATE TABLE tournament_rounds (
 -- Таблица раундов
 CREATE TABLE rounds (
     id SERIAL PRIMARY KEY,
-    number INTEGER NOT NULL,
+    number INTEGER NOT NULL UNIQUE,
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'completed')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP
 );
 
--- Таблица матчей (пар участниц)
+-- Таблица матчей
 CREATE TABLE matches (
     id SERIAL PRIMARY KEY,
-    round_id INTEGER NOT NULL REFERENCES rounds(id),
-    contestant1_id INTEGER NOT NULL REFERENCES contestants(id),
-    contestant2_id INTEGER NOT NULL REFERENCES contestants(id),
+    round_id INTEGER NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+    contestant1_id INTEGER NOT NULL REFERENCES contestants(id) ON DELETE CASCADE,
+    contestant2_id INTEGER NOT NULL REFERENCES contestants(id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
     winner_id INTEGER REFERENCES contestants(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -152,12 +152,12 @@ CREATE TABLE matches (
 -- Таблица голосов
 CREATE TABLE votes (
     id SERIAL PRIMARY KEY,
-    match_id INTEGER NOT NULL REFERENCES matches(id),
-    contestant_id INTEGER NOT NULL REFERENCES contestants(id),
+    match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+    contestant_id INTEGER NOT NULL REFERENCES contestants(id) ON DELETE CASCADE,
     ip_address VARCHAR(45) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_cancelled BOOLEAN NOT NULL DEFAULT false,
-    UNIQUE(match_id, ip_address)
+    CONSTRAINT unique_vote UNIQUE(match_id, ip_address)
 );
 
 -- Таблица для отслеживания IP адресов
@@ -169,44 +169,20 @@ CREATE TABLE ip_votes (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Индексы для оптимизации
-CREATE INDEX idx_tournaments_status ON tournaments(status);
-CREATE INDEX idx_tournament_rounds_status ON tournament_rounds(status);
+-- Таблица администраторов
+CREATE TABLE admins (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Создаем индексы
+CREATE INDEX idx_matches_round ON matches(round_id);
 CREATE INDEX idx_matches_status ON matches(status);
 CREATE INDEX idx_votes_match ON votes(match_id);
 CREATE INDEX idx_votes_ip ON votes(ip_address);
-CREATE INDEX idx_contestants_rating ON contestants(rating DESC);
-CREATE INDEX idx_matches_contestants ON matches(contestant1_id, contestant2_id);
-
--- Функция для автоматического обновления updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Триггеры для автоматического обновления updated_at
-CREATE TRIGGER update_contestants_updated_at
-    BEFORE UPDATE ON contestants
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_tournaments_updated_at
-    BEFORE UPDATE ON tournaments
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_tournament_rounds_updated_at
-    BEFORE UPDATE ON tournament_rounds
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_matches_updated_at
-    BEFORE UPDATE ON matches
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE INDEX idx_contestants_created ON contestants(created_at DESC);
 
 -- Функция для подсчета голосов
 CREATE OR REPLACE FUNCTION count_valid_votes(match_id INTEGER, contestant_id INTEGER)
@@ -245,8 +221,28 @@ BEGIN
     ELSIF votes2 > votes1 THEN
         RETURN contestant2;
     ELSE
-        RETURN NULL; -- Ничья
+        RETURN NULL;
     END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Функция для завершения матча
+CREATE OR REPLACE FUNCTION complete_match(match_id INTEGER)
+RETURNS BOOLEAN AS $$
+DECLARE
+    winner INTEGER;
+BEGIN
+    -- Определяем победителя
+    winner := determine_match_winner(match_id);
+    
+    -- Обновляем матч
+    UPDATE matches 
+    SET status = 'completed',
+        winner_id = winner,
+        completed_at = CURRENT_TIMESTAMP
+    WHERE id = match_id;
+    
+    RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -298,8 +294,64 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Триггер для автоматического завершения матча
+CREATE OR REPLACE FUNCTION check_match_completion()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Проверяем количество голосов
+    IF (
+        SELECT COUNT(*) 
+        FROM votes 
+        WHERE match_id = NEW.match_id 
+        AND NOT is_cancelled
+    ) >= 10 THEN
+        PERFORM complete_match(NEW.match_id);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER match_completion_check
+AFTER INSERT OR UPDATE ON votes
+FOR EACH ROW
+EXECUTE FUNCTION check_match_completion();
+
 -- Вставляем начальный раунд
 INSERT INTO rounds (number, status) VALUES (1, 'active');
+
+-- Создаем администратора по умолчанию (пароль: admin)
+INSERT INTO admins (username, password_hash)
+VALUES ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+
+-- Функция для автоматического обновления updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Триггеры для автоматического обновления updated_at
+CREATE TRIGGER update_contestants_updated_at
+    BEFORE UPDATE ON contestants
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_tournaments_updated_at
+    BEFORE UPDATE ON tournaments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_tournament_rounds_updated_at
+    BEFORE UPDATE ON tournament_rounds
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_matches_updated_at
+    BEFORE UPDATE ON matches
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- Вставляем начальные настройки
 INSERT INTO voting_settings (votes_to_win, max_active_matches, votes_per_ip_per_day)

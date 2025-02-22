@@ -306,6 +306,38 @@
                     <!-- Здесь будет список предложенных участниц -->
                 </div>
             </section>
+
+            <!-- Добавление участниц -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-plus-circle"></i> Добавить участницу</h2>
+                </div>
+                <form id="uploadForm" class="upload-form">
+                    <div class="form-group">
+                        <label for="name">Имя участницы</label>
+                        <input type="text" id="name" name="name" required
+                               placeholder="Введите имя участницы">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Фотография</label>
+                        <div class="media-preview" id="photoPreview">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Нажмите или перетащите фото</span>
+                        </div>
+                        <input type="file" id="photo" name="photo" 
+                               accept="image/*" required class="hidden">
+                        <p class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Рекомендуемый размер: 800x1000 пикселей, до 5 МБ
+                        </p>
+                    </div>
+
+                    <button type="submit" class="action-button">
+                        <i class="fas fa-plus"></i> Добавить участницу
+                    </button>
+                </form>
+            </section>
         </div>
     </main>
 
@@ -332,6 +364,12 @@
         </div>
     </div>
 
+    <!-- Уведомления -->
+    <div class="notification" id="notification" style="display: none;">
+        <i class="fas fa-info-circle"></i>
+        <span id="notificationText"></span>
+    </div>
+
     <footer>
         <div class="copyright">
             © 2024 Beauty Battle. Все права защищены.
@@ -339,5 +377,155 @@
     </footer>
 
     <script src="js/admin.js"></script>
+    <script>
+        // Функция для показа уведомлений
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            
+            notification.className = `notification ${type}`;
+            text.textContent = message;
+            notification.style.display = 'flex';
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-in forwards';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                    notification.style.animation = '';
+                }, 300);
+            }, 3000);
+        }
+
+        // Загрузка списка участниц
+        async function loadContestants() {
+            try {
+                const response = await fetch('/api/admin/contestants.php');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    showNotification(data.error || 'Ошибка загрузки данных', 'error');
+                    return;
+                }
+
+                const container = document.getElementById('contestantsList');
+                container.innerHTML = '';
+
+                data.contestants.forEach(contestant => {
+                    const card = document.createElement('div');
+                    card.className = 'contestant-card';
+                    card.innerHTML = `
+                        <img src="${contestant.photo}" alt="${contestant.name}">
+                        <div class="card-content">
+                            <h3>${contestant.name}</h3>
+                        </div>
+                        <div class="card-actions">
+                            <button onclick="deleteContestant(${contestant.id})" class="card-action delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                showNotification('Ошибка при загрузке данных', 'error');
+            }
+        }
+
+        // Предпросмотр фото
+        document.getElementById('photoPreview').addEventListener('click', () => {
+            document.getElementById('photo').click();
+        });
+
+        document.getElementById('photo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Проверяем размер файла
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('Файл слишком большой. Максимальный размер: 5MB', 'error');
+                    this.value = '';
+                    return;
+                }
+
+                // Проверяем тип файла
+                if (!file.type.startsWith('image/')) {
+                    showNotification('Пожалуйста, выберите изображение', 'error');
+                    this.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photoPreview');
+                    preview.style.backgroundImage = `url(${e.target.result})`;
+                    preview.innerHTML = '';
+                    preview.classList.add('has-media');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Отправка формы
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('/api/admin/upload.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Участница успешно добавлена');
+                    this.reset();
+                    document.getElementById('photoPreview').innerHTML = `
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Нажмите или перетащите фото</span>
+                    `;
+                    document.getElementById('photoPreview').classList.remove('has-media');
+                    loadContestants();
+                } else {
+                    showNotification(result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка при загрузке файла', 'error');
+            }
+        });
+
+        // Удаление участницы
+        async function deleteContestant(id) {
+            if (!confirm('Вы уверены, что хотите удалить эту участницу?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/delete.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Участница удалена');
+                    loadContestants();
+                } else {
+                    showNotification(result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка при удалении', 'error');
+            }
+        }
+
+        // Загружаем список участниц при загрузке страницы
+        loadContestants();
+    </script>
 </body>
 </html> 

@@ -18,10 +18,12 @@ try {
 
     // Проверка базы данных
     require_once __DIR__ . '/../config/database_render.php';
+    $start = microtime(true);
     $pdo->query('SELECT 1');
+    $latency = round((microtime(true) - $start) * 1000, 2);
     $status['checks']['database'] = [
         'status' => 'ok',
-        'latency_ms' => null
+        'latency_ms' => $latency
     ];
     
     // Проверка директорий
@@ -58,7 +60,7 @@ try {
     $required_settings = [
         'upload_max_filesize' => '10M',
         'post_max_size' => '10M',
-        'memory_limit' => '128M'
+        'memory_limit' => '256M'
     ];
     
     foreach ($required_settings as $key => $expected) {
@@ -87,6 +89,16 @@ try {
         'total_bytes' => $disk_total,
         'free_percent' => round(($disk_free / $disk_total) * 100, 2)
     ];
+
+    // Проверка таблиц в базе данных
+    $required_tables = ['contestants', 'rounds', 'matches', 'votes'];
+    foreach ($required_tables as $table) {
+        $stmt = $pdo->query("SELECT 1 FROM {$table} LIMIT 1");
+        $status['checks']['table_' . $table] = [
+            'status' => $stmt ? 'ok' : 'error',
+            'exists' => (bool)$stmt
+        ];
+    }
     
     // Общий статус
     $has_errors = false;

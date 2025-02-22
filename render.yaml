@@ -42,6 +42,8 @@ services:
         value: 7200
       - key: CSRF_TOKEN_LIFETIME
         value: 3600
+      - key: TZ
+        value: Europe/Moscow
     disk:
       name: beauty-battle-uploads
       mountPath: /var/www/html/public/uploads
@@ -54,9 +56,17 @@ services:
       timeoutSeconds: 5
       successThreshold: 1
       failureThreshold: 3
+    autoDeploy: true
+    pullRequestPreviewsEnabled: true
+    domains:
+      - beauty-battle.onrender.com
 
 databases:
   - name: beauty-battle-db
     region: frankfurt
     plan: free
-    ipAllowList: [] 
+    ipAllowList: []
+    backupSchedule:
+      type: daily
+      timeOfDay: 02:00
+      retentionPeriodInDays: 7 
