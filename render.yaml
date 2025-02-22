@@ -27,13 +27,13 @@ services:
           name: beauty-battle-db
           property: password
       - key: APP_URL
-        value: https://beauty-battle.onrender.com
+        value: https://beauty-battle-1.onrender.com
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
       - key: UPLOAD_MAX_SIZE
-        value: 10485760  # 10MB в байтах
+        value: 10485760  # 10MB
       - key: IMAGE_QUALITY
         value: 80
       - key: SCRIPT_TIMEOUT
@@ -44,6 +44,8 @@ services:
         value: 3600
       - key: TZ
         value: Europe/Moscow
+      - key: TELEGRAM_BOT_TOKEN
+        value: 7603535293:AAHCWb3_P9XKHMmaPOOp-dGAcZi35r4KHDs
     disk:
       name: beauty-battle-uploads
       mountPath: /var/www/html/public/uploads

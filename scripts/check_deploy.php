@@ -2,8 +2,8 @@
 require_once __DIR__ . '/../config/env.php';
 require_once __DIR__ . '/../classes/Logger.php';
 
-echo "Проверка развертывания Beauty Battle\n";
-echo "===================================\n\n";
+echo "Проверка готовности к деплою Beauty Battle\n";
+echo "=====================================\n\n";
 
 $status = [
     'success' => true,
@@ -22,23 +22,29 @@ function addCheck($name, $result, $details = null) {
 }
 
 try {
-    // 1. Проверка переменных окружения
-    echo "1. Проверка переменных окружения:\n";
-    $required_vars = [
-        'DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD',
-        'APP_URL', 'APP_ENV'
+    // 1. Проверка файловой структуры
+    echo "1. Проверка файловой структуры:\n";
+    $required_files = [
+        'Dockerfile',
+        'render.yaml',
+        'scripts/docker-entrypoint.sh',
+        'public/index.php',
+        'public/health.php',
+        'config/database_render.php',
+        'api/database/schema_pg.sql'
     ];
     
-    foreach ($required_vars as $var) {
-        $value = Env::get($var);
-        echo "   {$var}: " . ($value ? "OK" : "ОТСУТСТВУЕТ") . "\n";
-        addCheck("env_{$var}", !empty($value));
+    foreach ($required_files as $file) {
+        $exists = file_exists(__DIR__ . '/../' . $file);
+        echo "   {$file}: " . ($exists ? "OK" : "ОТСУТСТВУЕТ") . "\n";
+        addCheck("file_{$file}", $exists);
     }
     echo "\n";
-    
-    // 2. Проверка директорий
-    echo "2. Проверка директорий:\n";
+
+    // 2. Проверка прав доступа
+    echo "2. Проверка прав доступа:\n";
     $directories = [
+        'public/uploads',
         'public/uploads/photos',
         'public/uploads/videos',
         'public/uploads/thumbnails',
@@ -48,70 +54,82 @@ try {
     
     foreach ($directories as $dir) {
         $fullPath = __DIR__ . '/../' . $dir;
-        $exists = file_exists($fullPath);
-        $writable = is_writable($fullPath);
-        echo "   {$dir}: " . 
-             ($exists ? "существует" : "отсутствует") . ", " .
-             ($writable ? "доступна для записи" : "нет прав на запись") . "\n";
-        addCheck("dir_{$dir}", $exists && $writable);
-    }
-    echo "\n";
-    
-    // 3. Проверка базы данных
-    echo "3. Проверка базы данных:\n";
-    try {
-        require_once __DIR__ . '/../config/database_render.php';
-        $pdo->query('SELECT 1');
-        echo "   Подключение: OK\n";
-        addCheck("database_connection", true);
-        
-        // Проверка таблиц
-        $required_tables = [
-            'contestants',
-            'submissions',
-            'auth_tokens',
-            'voting_settings'
-        ];
-        
-        foreach ($required_tables as $table) {
-            $exists = $pdo->query("SELECT 1 FROM {$table} LIMIT 1");
-            echo "   Таблица {$table}: " . ($exists ? "OK" : "ОТСУТСТВУЕТ") . "\n";
-            addCheck("table_{$table}", (bool)$exists);
+        if (!file_exists($fullPath)) {
+            mkdir($fullPath, 0755, true);
         }
-    } catch (PDOException $e) {
-        echo "   ОШИБКА: " . $e->getMessage() . "\n";
-        addCheck("database_connection", false, $e->getMessage());
+        $writable = is_writable($fullPath);
+        echo "   {$dir}: " . ($writable ? "OK" : "НЕТ ПРАВ НА ЗАПИСЬ") . "\n";
+        addCheck("dir_{$dir}", $writable);
     }
     echo "\n";
+
+    // 3. Проверка конфигурации
+    echo "3. Проверка конфигурации:\n";
+    $required_vars = [
+        'DB_HOST',
+        'DB_NAME',
+        'DB_USER',
+        'DB_PASSWORD',
+        'APP_URL',
+        'APP_ENV',
+        'TELEGRAM_BOT_TOKEN'
+    ];
     
-    // 4. Проверка PHP
-    echo "4. Проверка PHP:\n";
-    $required_extensions = ['pdo', 'pdo_pgsql', 'gd'];
+    foreach ($required_vars as $var) {
+        $value = Env::get($var);
+        echo "   {$var}: " . ($value ? "OK" : "ОТСУТСТВУЕТ") . "\n";
+        addCheck("env_{$var}", !empty($value));
+    }
+    echo "\n";
+
+    // 4. Проверка PHP расширений
+    echo "4. Проверка PHP расширений:\n";
+    $required_extensions = [
+        'pdo',
+        'pdo_pgsql',
+        'gd',
+        'json',
+        'curl',
+        'fileinfo',
+        'exif'
+    ];
+    
     foreach ($required_extensions as $ext) {
         $loaded = extension_loaded($ext);
-        echo "   Расширение {$ext}: " . ($loaded ? "OK" : "ОТСУТСТВУЕТ") . "\n";
+        echo "   {$ext}: " . ($loaded ? "OK" : "ОТСУТСТВУЕТ") . "\n";
         addCheck("ext_{$ext}", $loaded);
     }
     echo "\n";
+
+    // 5. Проверка настроек PHP
+    echo "5. Проверка настроек PHP:\n";
+    $settings = [
+        'upload_max_filesize' => '10M',
+        'post_max_size' => '10M',
+        'memory_limit' => '256M',
+        'max_execution_time' => '60'
+    ];
     
-    // 5. Проверка прав доступа
-    echo "5. Проверка прав доступа:\n";
-    $webuser = posix_getpwuid(posix_geteuid())['name'];
-    echo "   Текущий пользователь: {$webuser}\n";
-    addCheck("webuser", $webuser === 'www-data');
-    
-    // Проверяем права на запись в критичные директории
-    foreach (['public/uploads', 'cache', 'logs'] as $dir) {
-        $fullPath = __DIR__ . '/../' . $dir;
-        $perms = substr(sprintf('%o', fileperms($fullPath)), -4);
-        echo "   Права на {$dir}: {$perms}\n";
-        addCheck("perms_{$dir}", $perms >= '0775');
+    foreach ($settings as $key => $expected) {
+        $actual = ini_get($key);
+        echo "   {$key}: {$actual} (ожидается: {$expected})\n";
+        addCheck("php_{$key}", $actual >= $expected);
     }
-    
+    echo "\n";
+
+    // 6. Проверка SSL сертификата
+    echo "6. Проверка SSL сертификата:\n";
+    $cert_file = '/var/www/.postgresql/root.crt';
+    $cert_exists = file_exists($cert_file);
+    echo "   Сертификат: " . ($cert_exists ? "OK" : "ОТСУТСТВУЕТ") . "\n";
+    addCheck("ssl_cert", $cert_exists);
+    echo "\n";
+
     // Выводим итоговый статус
-    echo "\nИтоговый статус: " . ($status['success'] ? "OK" : "ЕСТЬ ПРОБЛЕМЫ") . "\n";
+    echo "Итоговый статус: " . ($status['success'] ? "ГОТОВО К ДЕПЛОЮ" : "ТРЕБУЮТСЯ ИСПРАВЛЕНИЯ") . "\n\n";
+
     if (!$status['success']) {
-        echo "\nОбнаружены проблемы:\n";
+        echo "Необходимо исправить:\n";
         foreach ($status['checks'] as $name => $check) {
             if ($check['status'] === 'ERROR') {
                 echo "- {$name}: " . ($check['details'] ?? 'Проверка не пройдена') . "\n";
@@ -119,10 +137,10 @@ try {
         }
         exit(1);
     }
-    
+
 } catch (Exception $e) {
-    echo "\nКритическая ошибка: " . $e->getMessage() . "\n";
-    Logger::error('Deployment check failed', [
+    echo "\nОшибка при проверке: " . $e->getMessage() . "\n";
+    Logger::error('Deploy check failed', [
         'error' => $e->getMessage(),
         'trace' => $e->getTraceAsString()
     ]);
