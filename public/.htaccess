@@ -1,1 +1,54 @@
- 
+# Включаем движок преобразований
+RewriteEngine On
+
+# Базовая директория
+RewriteBase /
+
+# Разрешаем прямой доступ к существующим файлам и директориям
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Разрешаем прямой доступ к API
+RewriteRule ^api/ - [L]
+
+# Разрешаем прямой доступ к uploads
+RewriteRule ^uploads/ - [L]
+
+# Разрешаем прямой доступ к CSS и JS
+RewriteRule ^(css|js|images)/ - [L]
+
+# Все остальные запросы перенаправляем на index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Настройки CORS
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type"
+
+# Защита системных файлов
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Запрет просмотра директорий
+Options -Indexes
+
+# Сжатие файлов
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Кэширование
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+# Обработка ошибок
+ErrorDocument 404 /errors/404.html
+ErrorDocument 500 /errors/500.html
+ErrorDocument 403 /errors/403.html 

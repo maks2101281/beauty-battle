@@ -209,7 +209,7 @@
                 <p>Заполните форму, чтобы предложить новую участницу для голосования</p>
             </div>
 
-            <form id="submitForm" class="submit-form">
+            <form id="submitForm" class="submit-form" action="api/submit.php" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="name">Имя участницы</label>
                     <input type="text" id="name" name="name" required 
@@ -307,5 +307,11 @@
     </footer>
 
     <script src="js/submit.js"></script>
+
+    <!-- Добавим сообщение с инструкцией -->
+    <div class="help-message" style="margin-top: 1rem; text-align: center; color: var(--text-light);">
+        <i class="fas fa-info-circle"></i>
+        Для корректной работы откройте страницу через веб-сервер (http/https)
+    </div>
 </body>
 </html> 

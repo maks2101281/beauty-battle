@@ -3,486 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beauty Battle - Голосование за самых красивых</title>
-    <meta name="description" content="Участвуйте в голосовании за самых красивых участников Beauty Battle">
-    <!-- Добавляем современный шрифт Inter -->
+    <title>Beauty Battle - Голосование</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Подключаем иконки -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Основные стили -->
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        /* Современные стили для главной страницы */
-        .battle-container {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 2rem;
-            margin: 2rem auto;
-            max-width: 1200px;
-            padding: 0 1rem;
-        }
-
-        .battle-card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: var(--transition);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .battle-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary);
-        }
-
-        .battle-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(to bottom, 
-                rgba(0,0,0,0) 0%,
-                rgba(0,0,0,0.5) 100%);
-            opacity: 0;
-            transition: var(--transition);
-        }
-
-        .battle-card:hover::after {
-            opacity: 1;
-        }
-
-        .card-media {
-            position: relative;
-            overflow: hidden;
-            aspect-ratio: 3/4;
-        }
-
-        .card-media img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: var(--transition);
-        }
-
-        .battle-card:hover .card-media img {
-            transform: scale(1.05);
-        }
-
-        .card-content {
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            flex: 1;
-        }
-
-        .contestant-name {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text);
-            margin: 0;
-        }
-
-        .votes-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-
-        .votes-count {
-            color: var(--primary);
-            font-weight: 600;
-            font-size: 1.2rem;
-        }
-
-        .votes-required {
-            color: var(--text-light);
-        }
-
-        .vote-button {
-            width: 100%;
-            padding: 1rem;
-            border: none;
-            border-radius: var(--radius);
-            background: var(--primary-gradient);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .vote-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-        }
-
-        .vote-button.voted {
-            background: var(--success);
-            cursor: not-allowed;
-        }
-
-        .vote-button.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .comments-button {
-            width: 100%;
-            padding: 0.75rem;
-            border: none;
-            border-radius: var(--radius);
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text);
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .comments-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .vs-badge {
-            width: 80px;
-            height: 80px;
-            background: var(--primary-gradient);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            align-self: center;
-            box-shadow: var(--shadow-lg);
-            position: relative;
-            animation: pulse 2s infinite;
-        }
-
-        .vs-badge::before {
-            content: '';
-            position: absolute;
-            inset: -5px;
-            border-radius: 50%;
-            background: var(--primary-gradient);
-            opacity: 0.5;
-            z-index: -1;
-            animation: pulse 2s infinite 0.5s;
-        }
-
-        .tournament-info {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            margin: 2rem auto;
-            max-width: 1200px;
-            text-align: center;
-        }
-
-        .round-progress {
-            display: flex;
-            justify-content: space-between;
-            margin: 2rem 0;
-            position: relative;
-        }
-
-        .round-step {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .round-step::before {
-            content: '';
-            position: absolute;
-            top: 25px;
-            left: 50%;
-            width: 100%;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-50%);
-        }
-
-        .round-step:last-child::before {
-            display: none;
-        }
-
-        .round-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--card-bg);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            color: var(--text-light);
-            transition: var(--transition);
-        }
-
-        .round-step.active .round-icon {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-
-        .round-step.completed .round-icon {
-            background: var(--success);
-            border-color: var(--success);
-            color: white;
-        }
-
-        .round-label {
-            font-size: 0.9rem;
-            color: var(--text-light);
-        }
-
-        .battle-controls {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin: 2rem 0;
-        }
-
-        .notification {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            padding: 1rem 1.5rem;
-            border-radius: var(--radius);
-            background: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: var(--shadow-lg);
-            z-index: 1000;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .notification.error {
-            background: var(--danger);
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        @media (max-width: 768px) {
-            .battle-container {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .vs-badge {
-                width: 60px;
-                height: 60px;
-                font-size: 1.2rem;
-                margin: 1rem auto;
-            }
-
-            .round-progress {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .round-step::before {
-                width: 2px;
-                height: 100%;
-                left: 25px;
-                top: 50%;
-            }
-
-            .round-step {
-                flex-direction: row;
-                justify-content: flex-start;
-                gap: 1rem;
-            }
-
-            .tournament-info {
-                margin: 1rem;
-                padding: 1rem;
-            }
-
-            .card-media {
-                aspect-ratio: 1;
-            }
-
-            .battle-controls {
-                flex-direction: column;
-                padding: 0 1rem;
-            }
-
-            .battle-controls button {
-                width: 100%;
-            }
-        }
-    </style>
 </head>
 <body>
     <header>
         <nav>
-            <div class="logo">
+            <a href="/" class="logo">
                 <i class="fas fa-crown"></i> Beauty Battle
-            </div>
+            </a>
             <div class="nav-links">
-                <div class="stats">
-                    <span class="stat-item">
-                        <i class="fas fa-vote-yea"></i> 
-                        Голосов: <span id="total-votes" class="stat-value">0</span>
-                    </span>
-                    <span class="stat-item">
-                        <i class="fas fa-users"></i>
-                        Участников: <span id="total-contestants" class="stat-value">16</span>
-                    </span>
-                </div>
-                <a href="submit.html" class="action-button">
-                    <i class="fas fa-plus"></i> Предложить участника
+                <a href="/submit.html" class="action-button secondary">
+                    <i class="fas fa-plus"></i> Предложить участницу
                 </a>
             </div>
         </nav>
     </header>
 
     <main>
-        <div class="tournament-info">
-            <h2>Турнирная сетка</h2>
-            <div class="round-progress">
-                <div class="round-step completed">
-                    <div class="round-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <span class="round-label">16 участниц</span>
-                </div>
-                <div class="round-step active">
-                    <div class="round-icon">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <span class="round-label">8 участниц</span>
-                </div>
-                <div class="round-step">
-                    <div class="round-icon">
-                        <i class="fas fa-medal"></i>
-                    </div>
-                    <span class="round-label">4 участницы</span>
-                </div>
-                <div class="round-step">
-                    <div class="round-icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <span class="round-label">Финал</span>
-                </div>
+        <div class="round-info">
+            <h2>Раунд <span id="roundNumber">...</span></h2>
+            <div class="progress-bar">
+                <div class="progress" id="roundProgress"></div>
             </div>
         </div>
 
-        <div class="battle-container">
-            <div class="battle-card">
-                <div class="card-media">
-                    <img src="images/placeholder.jpg" alt="Участница 1" id="contestant1">
-                </div>
-                <div class="card-content">
-                    <h2 class="contestant-name" id="name1">Участница 1</h2>
-                    <div class="votes-info">
-                        <i class="fas fa-vote-yea"></i>
-                        <span class="votes-count" id="votes1">0</span>
-                        <span class="votes-required">/ <span id="requiredVotes1">20</span></span>
-                    </div>
-                    <button class="vote-button" onclick="vote(1)">
-                        <i class="fas fa-heart"></i> Голосовать
-                    </button>
-                    <button class="comments-button" onclick="toggleComments(1)">
-                        <i class="fas fa-comments"></i>
-                        Комментарии (<span id="comments-count-1">0</span>)
-                    </button>
-                </div>
-            </div>
-
-            <div class="vs-badge">VS</div>
-
-            <div class="battle-card">
-                <div class="card-media">
-                    <img src="images/placeholder.jpg" alt="Участница 2" id="contestant2">
-                </div>
-                <div class="card-content">
-                    <h2 class="contestant-name" id="name2">Участница 2</h2>
-                    <div class="votes-info">
-                        <i class="fas fa-vote-yea"></i>
-                        <span class="votes-count" id="votes2">0</span>
-                        <span class="votes-required">/ <span id="requiredVotes2">20</span></span>
-                    </div>
-                    <button class="vote-button" onclick="vote(2)">
-                        <i class="fas fa-heart"></i> Голосовать
-                    </button>
-                    <button class="comments-button" onclick="toggleComments(2)">
-                        <i class="fas fa-comments"></i>
-                        Комментарии (<span id="comments-count-2">0</span>)
-                    </button>
-                </div>
-            </div>
+        <div class="matches-container" id="matchesContainer">
+            <!-- Здесь будут пары для голосования -->
         </div>
 
-        <div class="battle-controls">
-            <button class="action-button" onclick="nextBattle()">
-                <i class="fas fa-forward"></i> Следующая пара
-            </button>
-        </div>
+        <template id="matchTemplate">
+            <div class="match-card">
+                <div class="match-header">
+                    <span class="match-number">Пара #<span class="number"></span></span>
+                </div>
+                <div class="contestants">
+                    <div class="contestant" data-contestant-id="">
+                        <div class="contestant-photo">
+                            <img src="" alt="">
+                            <div class="vote-overlay">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="contestant-info">
+                            <h3 class="contestant-name"></h3>
+                            <div class="votes-count">
+                                <i class="fas fa-heart"></i>
+                                <span class="votes">0</span>
+                            </div>
+                        </div>
+                        <button class="vote-button">
+                            <i class="fas fa-heart"></i> Голосовать
+                        </button>
+                    </div>
+                    <div class="vs-badge">VS</div>
+                    <div class="contestant" data-contestant-id="">
+                        <div class="contestant-photo">
+                            <img src="" alt="">
+                            <div class="vote-overlay">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="contestant-info">
+                            <h3 class="contestant-name"></h3>
+                            <div class="votes-count">
+                                <i class="fas fa-heart"></i>
+                                <span class="votes">0</span>
+                            </div>
+                        </div>
+                        <button class="vote-button">
+                            <i class="fas fa-heart"></i> Голосовать
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
     </main>
+
+    <div class="notification" id="notification" style="display: none;">
+        <i class="fas fa-info-circle"></i>
+        <span id="notificationText"></span>
+    </div>
 
     <footer>
         <div class="footer-content">
             <div class="footer-section">
                 <h3>О проекте</h3>
-                <p>Beauty Battle - платформа для голосования за самых красивых участников.</p>
+                <p>Beauty Battle - платформа для голосования за самых красивых участниц.</p>
             </div>
             <div class="footer-section">
-                <h3>Следите за нами</h3>
                 <div class="social-links">
                     <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
                     <a href="#" class="social-link"><i class="fab fa-vk"></i></a>
                     <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
                 </div>
-            </div>
-            <div class="footer-section">
-                <h3>Статистика</h3>
-                <button class="action-button" onclick="showLeaderboard()">
-                    <i class="fas fa-trophy"></i> Топ участников
-                </button>
             </div>
         </div>
         <div class="copyright">
@@ -490,6 +108,114 @@
         </div>
     </footer>
 
-    <script src="js/main.js"></script>
+    <script>
+        // Функция для показа уведомлений
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            
+            notification.className = `notification ${type}`;
+            text.textContent = message;
+            notification.style.display = 'flex';
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-in forwards';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                    notification.style.animation = '';
+                }, 300);
+            }, 3000);
+        }
+
+        // Функция для обновления данных матчей
+        async function updateMatches() {
+            try {
+                const response = await fetch('/api/voting.php');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    showNotification(data.error || 'Ошибка загрузки данных', 'error');
+                    return;
+                }
+
+                // Обновляем номер раунда
+                document.getElementById('roundNumber').textContent = data.round.number;
+
+                // Очищаем контейнер матчей
+                const container = document.getElementById('matchesContainer');
+                container.innerHTML = '';
+
+                // Создаем карточки для каждого матча
+                data.matches.forEach((match, index) => {
+                    const template = document.getElementById('matchTemplate');
+                    const clone = template.content.cloneNode(true);
+
+                    // Заполняем данные первой участницы
+                    const contestant1 = clone.querySelector('.contestant:first-child');
+                    contestant1.dataset.contestantId = match.contestant1_id;
+                    contestant1.querySelector('img').src = match.contestant1_photo;
+                    contestant1.querySelector('.contestant-name').textContent = match.contestant1_name;
+                    contestant1.querySelector('.votes').textContent = match.votes1;
+
+                    // Заполняем данные второй участницы
+                    const contestant2 = clone.querySelector('.contestant:last-child');
+                    contestant2.dataset.contestantId = match.contestant2_id;
+                    contestant2.querySelector('img').src = match.contestant2_photo;
+                    contestant2.querySelector('.contestant-name').textContent = match.contestant2_name;
+                    contestant2.querySelector('.votes').textContent = match.votes2;
+
+                    // Отмечаем, если пользователь уже голосовал
+                    if (match.user_vote) {
+                        const voted = match.user_vote === match.contestant1_id ? contestant1 : contestant2;
+                        voted.classList.add('voted');
+                        voted.querySelector('.vote-button').textContent = 'Отменить голос';
+                    }
+
+                    // Добавляем обработчики голосования
+                    clone.querySelectorAll('.vote-button').forEach(button => {
+                        button.addEventListener('click', async (e) => {
+                            const contestant = e.target.closest('.contestant');
+                            const matchId = match.match_id;
+                            const contestantId = contestant.dataset.contestantId;
+
+                            try {
+                                const response = await fetch('/api/voting.php', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        match_id: matchId,
+                                        contestant_id: contestantId
+                                    })
+                                });
+
+                                const result = await response.json();
+                                
+                                if (result.success) {
+                                    showNotification(result.message);
+                                    // Обновляем данные
+                                    updateMatches();
+                                } else {
+                                    showNotification(result.error, 'error');
+                                }
+                            } catch (error) {
+                                showNotification('Ошибка при голосовании', 'error');
+                            }
+                        });
+                    });
+
+                    container.appendChild(clone);
+                });
+
+            } catch (error) {
+                showNotification('Ошибка при загрузке данных', 'error');
+            }
+        }
+
+        // Обновляем данные каждые 10 секунд
+        updateMatches();
+        setInterval(updateMatches, 10000);
+    </script>
 </body>
 </html> 

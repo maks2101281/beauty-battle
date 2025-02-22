@@ -4,63 +4,59 @@ services:
     env: docker
     region: frankfurt
     plan: free
-    healthCheckPath: /
-    buildCommand: |
-      # Создаем необходимые директории
-      mkdir -p public/uploads/{photos,videos,thumbnails} cache logs public/errors
-      # Копируем SSL сертификат
-      mkdir -p /var/www/.postgresql
-      cp /etc/ssl/certs/ca-certificates.crt /var/www/.postgresql/root.crt
-      # Собираем Docker образ
-      docker build -t beauty-battle .
+    healthCheckPath: /health.php
+    buildCommand: docker build -t beauty-battle .
     startCommand: docker run -p $PORT:8080 beauty-battle
     envVars:
       - key: PORT
         value: 8080
       - key: DB_HOST
         fromDatabase:
-          name: facemash-battle-db
+          name: beauty-battle-db
           property: host
       - key: DB_NAME
         fromDatabase:
-          name: facemash-battle-db
+          name: beauty-battle-db
           property: database
       - key: DB_USER
         fromDatabase:
-          name: facemash-battle-db
+          name: beauty-battle-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: facemash-battle-db
+          name: beauty-battle-db
           property: password
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_BOT_USERNAME
-        sync: false
       - key: APP_URL
-        sync: false
+        value: https://beauty-battle.onrender.com
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
+      - key: UPLOAD_MAX_SIZE
+        value: 10485760  # 10MB в байтах
+      - key: IMAGE_QUALITY
+        value: 80
+      - key: SCRIPT_TIMEOUT
+        value: 60
+      - key: SESSION_LIFETIME
+        value: 7200
+      - key: CSRF_TOKEN_LIFETIME
+        value: 3600
     disk:
-      name: data
+      name: beauty-battle-uploads
       mountPath: /var/www/html/public/uploads
       sizeGB: 1
+    healthCheck:
+      httpPath: /health.php
+      port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 15
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
 
 databases:
-  - name: facemash-battle-db
+  - name: beauty-battle-db
     region: frankfurt
     plan: free
-    ipAllowList: []
-    postDeploy: |
-      # Инициализация базы данных
-      php scripts/init_render_db.php
-
-# Настройка постоянного хранилища
-disks:
-  - name: data
-    region: frankfurt
-    plan: free
-    sizeGB: 1
-    mountPath: /var/www/html/public/uploads 
+    ipAllowList: [] 

@@ -1,27 +1,35 @@
 <?php
 session_start();
 
-// Разрешаем CORS для локальной разработки
-header('Access-Control-Allow-Origin: http://localhost:8000');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept');
+// Включаем отображение ошибок для отладки
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// Обработка OPTIONS запроса
+// Логируем входящий запрос
+error_log('Request Method: ' . $_SERVER['REQUEST_METHOD']);
+error_log('Request Headers: ' . print_r(getallheaders(), true));
+
+// Базовые заголовки для всех ответов
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: ' . (isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*'));
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+
+// Обработка preflight запросов
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-header('Content-Type: application/json; charset=utf-8');
-
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/ImageProcessor.php';
 
 try {
-    // Для отладки
-    error_log('Request received: ' . print_r($_POST, true));
-    error_log('Files received: ' . print_r($_FILES, true));
+    // Логируем полученные данные
+    error_log('POST data: ' . print_r($_POST, true));
+    error_log('FILES data: ' . print_r($_FILES, true));
 
     // Проверяем метод запроса
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -30,7 +38,7 @@ try {
 
     // Проверяем наличие файла
     if (!isset($_FILES['media']) || $_FILES['media']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('Ошибка загрузки файла: ' . $_FILES['media']['error']);
+        throw new Exception('Ошибка загрузки файла: ' . ($_FILES['media']['error'] ?? 'файл не найден'));
     }
 
     $type = $_POST['type'] ?? 'photo';

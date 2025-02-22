@@ -50,11 +50,7 @@ CREATE TABLE contestants (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     photo VARCHAR(255) NOT NULL,
-    thumbnail VARCHAR(255) NOT NULL,
-    rating INTEGER DEFAULT 1500,
-    votes INTEGER DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Таблица для комментариев
@@ -100,15 +96,12 @@ CREATE TABLE user_achievements (
 -- Таблица для настроек голосования
 CREATE TABLE voting_settings (
     id SERIAL PRIMARY KEY,
-    required_votes INTEGER NOT NULL DEFAULT 50,
-    final_voting_time INTEGER NOT NULL DEFAULT 24,
-    final_start_time TIMESTAMP NULL,
+    votes_to_win INTEGER NOT NULL DEFAULT 10,
+    max_active_matches INTEGER NOT NULL DEFAULT 5,
+    votes_per_ip_per_day INTEGER NOT NULL DEFAULT 20,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
--- Вставляем начальные настройки
-INSERT INTO voting_settings (required_votes, final_voting_time) VALUES (50, 24);
 
 -- Таблица для турниров
 CREATE TABLE tournaments (
@@ -134,36 +127,56 @@ CREATE TABLE tournament_rounds (
     UNIQUE(tournament_id, round_number)
 );
 
--- Таблица для матчей (пар участниц)
-CREATE TABLE matches (
+-- Таблица раундов
+CREATE TABLE rounds (
     id SERIAL PRIMARY KEY,
-    tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-    round_id INTEGER NOT NULL REFERENCES tournament_rounds(id) ON DELETE CASCADE,
-    contestant1_id INTEGER NOT NULL REFERENCES contestants(id) ON DELETE CASCADE,
-    contestant2_id INTEGER NOT NULL REFERENCES contestants(id) ON DELETE CASCADE,
-    winner_id INTEGER REFERENCES contestants(id) ON DELETE SET NULL,
+    number INTEGER NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'completed')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(round_id, contestant1_id),
-    UNIQUE(round_id, contestant2_id)
+    completed_at TIMESTAMP
 );
 
--- Таблица для голосов в матчах
-CREATE TABLE match_votes (
+-- Таблица матчей (пар участниц)
+CREATE TABLE matches (
     id SERIAL PRIMARY KEY,
-    match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES telegram_users(id) ON DELETE CASCADE,
-    contestant_id INTEGER NOT NULL REFERENCES contestants(id) ON DELETE CASCADE,
+    round_id INTEGER NOT NULL REFERENCES rounds(id),
+    contestant1_id INTEGER NOT NULL REFERENCES contestants(id),
+    contestant2_id INTEGER NOT NULL REFERENCES contestants(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
+    winner_id INTEGER REFERENCES contestants(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(match_id, user_id)
+    completed_at TIMESTAMP,
+    CONSTRAINT different_contestants CHECK (contestant1_id != contestant2_id)
+);
+
+-- Таблица голосов
+CREATE TABLE votes (
+    id SERIAL PRIMARY KEY,
+    match_id INTEGER NOT NULL REFERENCES matches(id),
+    contestant_id INTEGER NOT NULL REFERENCES contestants(id),
+    ip_address VARCHAR(45) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_cancelled BOOLEAN NOT NULL DEFAULT false,
+    UNIQUE(match_id, ip_address)
+);
+
+-- Таблица для отслеживания IP адресов
+CREATE TABLE ip_votes (
+    id SERIAL PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    votes_count INTEGER DEFAULT 1,
+    last_vote_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Индексы для оптимизации
 CREATE INDEX idx_tournaments_status ON tournaments(status);
 CREATE INDEX idx_tournament_rounds_status ON tournament_rounds(status);
 CREATE INDEX idx_matches_status ON matches(status);
-CREATE INDEX idx_match_votes_match_id ON match_votes(match_id);
-CREATE INDEX idx_match_votes_user_id ON match_votes(user_id);
+CREATE INDEX idx_votes_match ON votes(match_id);
+CREATE INDEX idx_votes_ip ON votes(ip_address);
+CREATE INDEX idx_contestants_rating ON contestants(rating DESC);
+CREATE INDEX idx_matches_contestants ON matches(contestant1_id, contestant2_id);
 
 -- Функция для автоматического обновления updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -195,88 +208,100 @@ CREATE TRIGGER update_matches_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Функция для определения победителя матча
-CREATE OR REPLACE FUNCTION determine_match_winner()
-RETURNS TRIGGER AS $$
+-- Функция для подсчета голосов
+CREATE OR REPLACE FUNCTION count_valid_votes(match_id INTEGER, contestant_id INTEGER)
+RETURNS INTEGER AS $$
 BEGIN
-    IF NEW.status = 'completed' THEN
-        -- Подсчитываем голоса и определяем победителя
-        WITH vote_counts AS (
-            SELECT 
-                contestant_id,
-                COUNT(*) as votes
-            FROM match_votes
-            WHERE match_id = NEW.id
-            GROUP BY contestant_id
-            ORDER BY votes DESC
-            LIMIT 1
-        )
-        UPDATE matches
-        SET winner_id = (SELECT contestant_id FROM vote_counts)
-        WHERE id = NEW.id;
-    END IF;
-    RETURN NEW;
+    RETURN (
+        SELECT COUNT(*)
+        FROM votes
+        WHERE votes.match_id = $1
+        AND votes.contestant_id = $2
+        AND NOT is_cancelled
+    );
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Триггер для автоматического определения победителя
-CREATE TRIGGER determine_match_winner_trigger
-    AFTER UPDATE OF status ON matches
-    FOR EACH ROW
-    WHEN (NEW.status = 'completed')
-    EXECUTE FUNCTION determine_match_winner();
-
--- Функция для создания следующего раунда
-CREATE OR REPLACE FUNCTION create_next_round()
-RETURNS TRIGGER AS $$
+-- Функция для определения победителя
+CREATE OR REPLACE FUNCTION determine_match_winner(match_id INTEGER)
+RETURNS INTEGER AS $$
 DECLARE
-    next_round_number INTEGER;
-    tournament_record RECORD;
+    votes1 INTEGER;
+    votes2 INTEGER;
+    contestant1 INTEGER;
+    contestant2 INTEGER;
 BEGIN
-    -- Получаем информацию о турнире
-    SELECT * INTO tournament_record
-    FROM tournaments
-    WHERE id = NEW.tournament_id;
+    -- Получаем ID участниц
+    SELECT contestant1_id, contestant2_id INTO contestant1, contestant2
+    FROM matches WHERE id = match_id;
     
-    -- Если все матчи текущего раунда завершены
-    IF NOT EXISTS (
-        SELECT 1 FROM matches
-        WHERE round_id = NEW.id AND status != 'completed'
-    ) THEN
-        next_round_number := tournament_record.current_round + 1;
-        
-        -- Если есть следующий раунд
-        IF next_round_number <= tournament_record.total_rounds THEN
-            -- Создаем новый раунд
-            INSERT INTO tournament_rounds (
-                tournament_id,
-                round_number,
-                status
-            ) VALUES (
-                tournament_record.id,
-                next_round_number,
-                'pending'
-            );
-            
-            -- Обновляем текущий раунд турнира
-            UPDATE tournaments
-            SET current_round = next_round_number
-            WHERE id = tournament_record.id;
-        ELSE
-            -- Завершаем турнир
-            UPDATE tournaments
-            SET status = 'completed',
-                end_date = CURRENT_TIMESTAMP
-            WHERE id = tournament_record.id;
-        END IF;
+    -- Подсчитываем голоса
+    votes1 := count_valid_votes(match_id, contestant1);
+    votes2 := count_valid_votes(match_id, contestant2);
+    
+    -- Определяем победителя
+    IF votes1 > votes2 THEN
+        RETURN contestant1;
+    ELSIF votes2 > votes1 THEN
+        RETURN contestant2;
+    ELSE
+        RETURN NULL; -- Ничья
     END IF;
-    RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Триггер для автоматического создания следующего раунда
-CREATE TRIGGER create_next_round_trigger
-    AFTER UPDATE OF status ON tournament_rounds
-    FOR EACH ROW
-    WHEN (NEW.status = 'completed')
-    EXECUTE FUNCTION create_next_round(); 
+-- Функция для завершения раунда
+CREATE OR REPLACE FUNCTION complete_round(round_id INTEGER)
+RETURNS BOOLEAN AS $$
+DECLARE
+    next_round INTEGER;
+    current_number INTEGER;
+BEGIN
+    -- Получаем номер текущего раунда
+    SELECT number INTO current_number FROM rounds WHERE id = round_id;
+    
+    -- Завершаем текущий раунд
+    UPDATE rounds 
+    SET status = 'completed',
+        completed_at = CURRENT_TIMESTAMP
+    WHERE id = round_id;
+    
+    -- Создаем следующий раунд, если это не финал
+    IF current_number < 4 THEN -- максимум 4 раунда (16->8->4->2)
+        INSERT INTO rounds (number, status)
+        VALUES (current_number + 1, 'active')
+        RETURNING id INTO next_round;
+        
+        -- Создаем матчи для следующего раунда
+        INSERT INTO matches (round_id, contestant1_id, contestant2_id)
+        SELECT 
+            next_round,
+            m1.winner_id,
+            m2.winner_id
+        FROM (
+            SELECT ROW_NUMBER() OVER (ORDER BY id) as rn,
+                   winner_id
+            FROM matches 
+            WHERE round_id = round_id
+            AND status = 'completed'
+        ) m1
+        JOIN (
+            SELECT ROW_NUMBER() OVER (ORDER BY id) as rn,
+                   winner_id
+            FROM matches 
+            WHERE round_id = round_id
+            AND status = 'completed'
+        ) m2 ON m1.rn % 2 = 1 AND m2.rn = m1.rn + 1;
+    END IF;
+    
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Вставляем начальный раунд
+INSERT INTO rounds (number, status) VALUES (1, 'active');
+
+-- Вставляем начальные настройки
+INSERT INTO voting_settings (votes_to_win, max_active_matches, votes_per_ip_per_day)
+VALUES (10, 5, 20)
+ON CONFLICT DO NOTHING; 

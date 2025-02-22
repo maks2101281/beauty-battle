@@ -3,43 +3,58 @@ require_once __DIR__ . '/env.php';
 
 try {
     // Получаем параметры подключения
-    $host = getenv('DB_HOST') ?: Env::get('DB_HOST');
-    $dbname = getenv('DB_NAME') ?: Env::get('DB_NAME');
-    $user = getenv('DB_USER') ?: Env::get('DB_USER');
-    $password = getenv('DB_PASSWORD') ?: Env::get('DB_PASSWORD');
+    $host = getenv('DB_HOST');
+    if (empty($host)) {
+        throw new Exception('DB_HOST не установлен');
+    }
+    
+    $dbname = getenv('DB_NAME');
+    if (empty($dbname)) {
+        throw new Exception('DB_NAME не установлен');
+    }
+    
+    $user = getenv('DB_USER');
+    if (empty($user)) {
+        throw new Exception('DB_USER не установлен');
+    }
+    
+    $password = getenv('DB_PASSWORD');
+    if (empty($password)) {
+        throw new Exception('DB_PASSWORD не установлен');
+    }
 
     // Добавляем полное доменное имя для хоста
     if (strpos($host, '.') === false) {
-        $host .= '.oregon-postgres.render.com';
+        $host .= '.frankfurt-postgres.render.com';
     }
 
     // Путь к файлу сертификата
-    $certFile = '/var/www/.postgresql/root.crt';
+    $certDir = '/var/www/.postgresql';
+    $certFile = $certDir . '/root.crt';
 
-    // Проверяем наличие сертификата
-    if (file_exists($certFile)) {
-        // Используем verify-full с указанием пути к сертификату
-        $dsn = sprintf(
-            "pgsql:host=%s;port=5432;dbname=%s;sslmode=verify-full;sslcert=%s",
-            $host,
-            $dbname,
-            $certFile
-        );
-    } else {
-        // Если сертификат не найден, используем режим require без проверки
-        $dsn = sprintf(
-            "pgsql:host=%s;port=5432;dbname=%s;sslmode=require",
-            $host,
-            $dbname
-        );
+    // Создаем директорию для сертификата если её нет
+    if (!file_exists($certDir)) {
+        mkdir($certDir, 0755, true);
     }
+
+    // Копируем сертификат если его нет
+    if (!file_exists($certFile) && file_exists('/etc/ssl/certs/ca-certificates.crt')) {
+        copy('/etc/ssl/certs/ca-certificates.crt', $certFile);
+        chmod($certFile, 0644);
+    }
+
+    // Формируем DSN
+    $dsn = sprintf(
+        "pgsql:host=%s;port=5432;dbname=%s;sslmode=require",
+        $host,
+        $dbname
+    );
 
     // Настройки PDO
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_PERSISTENT => true
+        PDO::ATTR_EMULATE_PREPARES => false
     ];
 
     // Создаем подключение
@@ -52,6 +67,16 @@ try {
     error_log("Database connection error: " . $e->getMessage());
     error_log("Connection details: host={$host}, dbname={$dbname}, user={$user}");
     error_log("DSN: " . str_replace($password, '***', $dsn));
-    error_log("Certificate exists: " . (file_exists($certFile) ? 'Yes' : 'No'));
-    throw $e;
+    
+    if (php_sapi_name() !== 'cli') {
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Ошибка подключения к базе данных'
+        ]);
+        exit;
+    } else {
+        throw $e;
+    }
 }

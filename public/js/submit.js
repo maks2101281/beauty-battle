@@ -112,70 +112,102 @@ document.getElementById('video').addEventListener('change', async function(e) {
 document.getElementById('submitForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const formData = new FormData();
+    // Проверяем, что страница открыта через http/https
+    if (window.location.protocol === 'file:') {
+        showNotification('Пожалуйста, откройте страницу через веб-сервер (http/https)', 'error');
+        return;
+    }
+    
+    const formData = new FormData(this);
     const activeType = document.querySelector('.media-type-btn.active').dataset.type;
     
-    formData.append('name', document.getElementById('name').value);
-    formData.append('type', activeType);
-    formData.append('social', document.getElementById('social').value);
-    
-    // Добавляем файл в зависимости от типа
-    const file = activeType === 'photo' ? 
-        document.getElementById('photo').files[0] : 
-        document.getElementById('video').files[0];
-    
-    if (!file) {
+    // Проверяем, выбран ли файл
+    const fileInput = activeType === 'photo' ? 
+        document.getElementById('photo') : 
+        document.getElementById('video');
+        
+    if (!fileInput.files.length) {
         showNotification('Пожалуйста, выберите файл', 'error');
         return;
     }
     
-    formData.append('media', file);
+    // Добавляем тип медиа
+    formData.set('type', activeType);
     
     try {
-        const baseUrl = window.location.hostname === 'localhost' ? 
-            'http://localhost:8000' : 
-            window.location.origin;
-            
-        const response = await fetch(`${baseUrl}/api/submit.php`, {
+        // Показываем индикатор загрузки
+        const submitBtn = this.querySelector('.submit-btn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+        submitBtn.disabled = true;
+        
+        // Отправляем запрос
+        const response = await fetch('api/submit.php', {
             method: 'POST',
             body: formData,
-            mode: 'cors',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            credentials: 'same-origin'
         });
         
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            throw new Error('Не удалось обработать ответ сервера. Попробуйте еще раз.');
         }
         
-        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Ошибка сервера. Пожалуйста, попробуйте позже.');
+        }
         
         if (result.success) {
             showNotification('Заявка успешно отправлена!');
+            // Очищаем форму
+            this.reset();
+            // Очищаем превью
+            document.getElementById('photoPreview').innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>Нажмите или перетащите фото</span>';
+            document.getElementById('videoPreview').innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>Нажмите или перетащите видео</span>';
+            // Перенаправляем на главную через 2 секунды
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = './';
             }, 2000);
         } else {
-            throw new Error(result.error || 'Произошла ошибка при отправке');
+            throw new Error(result.error || 'Произошла ошибка при отправке. Попробуйте еще раз.');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showNotification(error.message, 'error');
+        // Логируем ошибку для отладки
+        if (error.stack) {
+            console.error('Подробности ошибки:', {
+                message: error.message,
+                stack: error.stack
+            });
+        } else {
+            console.error('Ошибка:', error.message || error);
+        }
+        
+        // Показываем пользователю понятное сообщение
+        showNotification(
+            error.message || 'Произошла неизвестная ошибка. Пожалуйста, попробуйте позже.',
+            'error'
+        );
+    } finally {
+        // Восстанавливаем кнопку
+        const submitBtn = this.querySelector('.submit-btn');
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Отправить';
+        submitBtn.disabled = false;
     }
 });
 
 // Показ уведомлений
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    notification.className = 'notification ' + type;
+    
+    const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
     notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        <i class="fas fa-${icon}"></i>
         ${message}
     `;
+    
     document.body.appendChild(notification);
 
     setTimeout(() => {
